@@ -63,12 +63,12 @@
     "visible": false
   },
   "station": {
-    "x": 42.8,
-    "y": 41.4,
+    "x": 44.1,
+    "y": 72.7,
     "size": 4.5,
     "font": "Barlow Condensed",
     "weight": "700",
-    "color": "#00e5a0",
+    "color": "#00ffb3",
     "visible": true
   },
   "actname": {
@@ -78,6 +78,6 @@
     "font": "Barlow Condensed",
     "weight": "700",
     "color": "#00b8d4",
-    "visible": true
+    "visible": false
   }
 }
