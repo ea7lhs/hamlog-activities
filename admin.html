@@ -178,6 +178,7 @@
     letter-spacing:.08em;transition:all .2s;text-decoration:none;display:inline-block;
   }
   .btn-sm:hover{border-color:var(--accent2);color:var(--accent2)}
+  .btn-sm.danger:hover{border-color:var(--danger);color:var(--danger)}
   .empty-list{font-family:var(--mono);font-size:.75rem;color:var(--text-dim);text-align:center;padding:2rem;border:1px dashed var(--border)}
 
   /* Toast */
@@ -702,8 +703,10 @@ async function loadContentList() {
       <div class="ci-actions">
         <a class="btn-sm" href="${pageFor(item)}" target="_blank">VER →</a>
         <button class="btn-sm" id="edit-btn-${item._folder}">EDITAR</button>
+        <button class="btn-sm danger" id="del-btn-${item._folder}">BORRAR</button>
       </div>`;
     div.querySelector('[id^="edit-btn-"]').addEventListener('click', () => editItem(item));
+    div.querySelector('[id^="del-btn-"]').addEventListener('click', () => deleteItem(item));
     list.appendChild(div);
   });
 }
@@ -831,6 +834,46 @@ function markdownToHtml(md) {
     .replace(/^- (.+)$/gm, '<li>$1</li>')
     .replace(/\n\n/g, '</p><p>')
     .replace(/^(?!<)(.+)$/gm, '<p>$1</p>');
+}
+
+
+// ── Delete item ────────────────────────────────────────────────────────────
+async function deleteItem(item) {
+  const name = item.nombre || item.titulo || item._folder;
+  if (!confirm(`¿Eliminar "${name}"?\n\nEsta acción no se puede deshacer.`)) return;
+
+  const folder = (item._path || 'actividades') + '/' + item._folder;
+
+  try {
+    // List all files in the folder
+    const r = await fetch(`${API}/${folder}`, {
+      headers:{Authorization:`token ${ghToken}`,Accept:'application/vnd.github.v3+json'}
+    });
+    if (!r.ok) throw new Error('No se pudo acceder a la carpeta');
+    const files = await r.json();
+
+    // Delete each file
+    for (const file of files) {
+      if (file.type !== 'file') continue;
+      await fetch(`${API}/${folder}/${file.name}`, {
+        method: 'DELETE',
+        headers:{
+          Authorization:`token ${ghToken}`,
+          Accept:'application/vnd.github.v3+json',
+          'Content-Type':'application/json',
+        },
+        body: JSON.stringify({
+          message: `Elimina: ${name}`,
+          sha: file.sha,
+          branch: GITHUB_BRANCH,
+        })
+      });
+    }
+    toast('✓ Publicación eliminada');
+    setTimeout(loadContentList, 1000);
+  } catch(e) {
+    toast('Error al eliminar: ' + (e.message || e), true);
+  }
 }
 
 function resetForm() {
