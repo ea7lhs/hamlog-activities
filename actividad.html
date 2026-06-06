@@ -320,6 +320,7 @@ const RAW = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${G
 
 const params = new URLSearchParams(location.search);
 const actFolder = params.get('a');
+  const actPath = params.get('f') || 'actividades';
 
 let allQSOs = [];
 let actInfo = {};
@@ -347,7 +348,7 @@ async function load() {
 
   // Info
   try {
-    const r = await fetch(`${RAW}/actividades/${actFolder}/info.json`);
+    const r = await fetch(`${RAW}/${actPath}/${actFolder}/info.json`);
     if (r.ok) {
       actInfo = await r.json();
       renderHero(actInfo);
@@ -356,13 +357,13 @@ async function load() {
 
   // Diploma image
   try {
-    const dUrl = `${RAW}/actividades/${actFolder}/diploma.png`;
+    const dUrl = `${RAW}/${actPath}/${actFolder}/diploma.png`;
     diplomaImg = await loadImage(dUrl);
   } catch {}
 
   // Log
   try {
-    const r = await fetch(`${RAW}/actividades/${actFolder}/log.adi`);
+    const r = await fetch(`${RAW}/${actPath}/${actFolder}/log.adi`);
     if (r.ok) {
       const txt = await r.text();
       allQSOs = parseADIF(txt);
