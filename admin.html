@@ -249,13 +249,23 @@
             <input type="text" id="f-titulo" placeholder="Nombre de la publicación">
           </div>
           <div class="field">
-            <label>Fecha *</label>
+            <label id="f-fecha-label">Fecha *</label>
             <input type="date" id="f-fecha">
           </div>
         </div>
 
         <!-- Campos específicos por tipo -->
         <div id="fields-log">
+          <div class="fg">
+            <div class="field">
+              <label>Fecha fin (si es varios días)</label>
+              <input type="date" id="f-fecha-fin-log">
+            </div>
+            <div class="field">
+              <label>Localización / Referencia</label>
+              <input type="text" id="f-localizacion" placeholder="EA5-0001, EA7/MA-001...">
+            </div>
+          </div>
           <div class="fg">
             <div class="field">
               <label>Tipo de actividad</label>
@@ -507,6 +517,9 @@ function setType(type) {
   ['log','post','evento','galeria'].forEach(t => {
     document.getElementById('type-' + t).classList.toggle('active', t === type);
   });
+  // Update fecha label
+  const lbl = document.getElementById('f-fecha-label');
+  if (lbl) lbl.textContent = type === 'log' ? 'Fecha inicio *' : 'Fecha *';
   // Show/hide fields
   document.getElementById('fields-log').style.display        = type === 'log'     ? '' : 'none';
   document.getElementById('fields-adi').style.display        = type === 'log'     ? '' : 'none';
@@ -627,8 +640,11 @@ async function publish() {
   };
 
   if (currentType === 'log') {
-    info.tipo       = document.getElementById('f-tipo').value;
-    info.indicativo = document.getElementById('f-indicativo').value.trim().toUpperCase();
+    info.tipo         = document.getElementById('f-tipo').value;
+    info.indicativo   = document.getElementById('f-indicativo').value.trim().toUpperCase();
+    info.localizacion = document.getElementById('f-localizacion').value.trim();
+    const fechaFin    = document.getElementById('f-fecha-fin-log').value;
+    info.fechaFin     = fechaFin || fecha; // default to same as start
   }
   if (currentType === 'evento') {
     info.fechaFin = document.getElementById('f-fecha-fin').value || null;
@@ -818,6 +834,8 @@ function editItem(item) {
   document.getElementById('f-fecha').value  = item.fecha || '';
   document.getElementById('f-desc').value   = item.descripcion || '';
   if (item.indicativo) document.getElementById('f-indicativo').value = item.indicativo;
+  if (item.localizacion) document.getElementById('f-localizacion').value = item.localizacion;
+  if (item.fechaFin && item.fechaFin !== item.fecha) document.getElementById('f-fecha-fin-log').value = item.fechaFin;
   if (item.tipo) document.getElementById('f-tipo').value = item.tipo;
   if (item.fechaFin) document.getElementById('f-fecha-fin').value = item.fechaFin;
   if (item.lugar) document.getElementById('f-lugar').value = item.lugar;
@@ -890,6 +908,8 @@ function resetForm() {
   document.getElementById('f-fecha').value = '';
   document.getElementById('f-desc').value = '';
   document.getElementById('f-indicativo').value = '';
+  document.getElementById('f-localizacion').value = '';
+  document.getElementById('f-fecha-fin-log').value = '';
   document.getElementById('foto-name').textContent = '';
   document.getElementById('adi-name').textContent = '';
   document.getElementById('diploma-name').textContent = '';
