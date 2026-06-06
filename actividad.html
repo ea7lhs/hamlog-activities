@@ -325,6 +325,7 @@ const actFolder = params.get('a');
 let allQSOs = [];
 let actInfo = {};
 let diplomaImg = null;
+let diplomaConfig = null;
 
 // ── ADIF Parser ──────────────────────────────────────────────────────────────
 function parseADIF(txt) {
@@ -353,6 +354,12 @@ async function load() {
       actInfo = await r.json();
       renderHero(actInfo);
     }
+  } catch {}
+
+  // Diploma config
+  try {
+    const cr = await fetch(`${RAW}/${actPath}/${actFolder}/diploma.config.json`);
+    if (cr.ok) diplomaConfig = await cr.json();
   } catch {}
 
   // Diploma image
@@ -504,53 +511,60 @@ function drawQSL(qso) {
   // Background
   if (diplomaImg) {
     ctx.drawImage(diplomaImg, 0, 0, W, H);
-    ctx.fillStyle = 'rgba(10,14,15,0.72)';
-    ctx.fillRect(0, 0, W, H);
   } else {
-    // Gradient fallback
     const grad = ctx.createLinearGradient(0, 0, W, H);
     grad.addColorStop(0, '#0a0e0f');
     grad.addColorStop(1, '#0f1e20');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
-
-    // Grid lines
-    ctx.strokeStyle = 'rgba(0,229,160,0.04)';
-    ctx.lineWidth = 1;
-    for (let x = 0; x < W; x += 40) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-    }
-    for (let y = 0; y < H; y += 40) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-    }
+    ctx.strokeStyle = 'rgba(0,229,160,0.04)'; ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+    ctx.fillStyle = '#00e5a0';
+    ctx.fillRect(0, 0, W, 4); ctx.fillRect(0, H-4, W, 4);
   }
 
-  // Top accent bar
-  ctx.fillStyle = '#00e5a0';
-  ctx.fillRect(0, 0, W, 6);
+  // If we have a diploma config, use it
+  if (diplomaConfig) {
+    const FIELD_MAP = {
+      call:    qso.CALL||'',
+      date:    formatDate(qso.QSO_DATE),
+      time:    formatTime(qso.TIME_ON),
+      band:    qso.BAND||'',
+      mode:    qso.MODE||'',
+      rst_s:   qso.RST_SENT||'',
+      rst_r:   qso.RST_RCVD||'',
+      station: actInfo.indicativo||'',
+      actname: actInfo.nombre||'',
+    };
+    Object.entries(diplomaConfig).forEach(([id, cfg]) => {
+      if (!cfg.visible) return;
+      const text = FIELD_MAP[id] || '';
+      if (!text) return;
+      const x = cfg.x / 100 * W;
+      const y = cfg.y / 100 * H;
+      ctx.font = `${cfg.weight||'400'} ${cfg.size * (W/800)}px '${cfg.font}', sans-serif`;
+      ctx.fillStyle = cfg.color;
+      ctx.shadowColor = 'rgba(0,0,0,.8)'; ctx.shadowBlur = 4;
+      ctx.fillText(text, x, y + cfg.size * (W/800));
+      ctx.shadowBlur = 0;
+    });
+    return;
+  }
 
-  // "CONFIRMING QSO" label
+  // Default QSL layout (no config)
+  ctx.fillStyle = '#00e5a0'; ctx.fillRect(0, 0, W, 6);
   ctx.font = '600 22px "Share Tech Mono", monospace';
   ctx.fillStyle = '#00e5a0';
-  ctx.letterSpacing = '0.3em';
   ctx.fillText('CONFIRMING QSO WITH', 80, 80);
-
-  // Callsign
   ctx.font = 'bold 130px "Barlow Condensed", sans-serif';
   ctx.fillStyle = '#dde8ea';
   ctx.fillText(qso.CALL || '?', 80, 200);
-
-  // Activity name
   ctx.font = '700 36px "Barlow Condensed", sans-serif';
   ctx.fillStyle = '#00b8d4';
   ctx.fillText((actInfo.nombre || '').toUpperCase(), 80, 255);
-
-  // Divider
-  ctx.strokeStyle = '#2a3538';
-  ctx.lineWidth = 1;
+  ctx.strokeStyle = '#2a3538'; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.moveTo(80, 290); ctx.lineTo(W - 80, 290); ctx.stroke();
-
-  // QSO Details grid
   const details = [
     ['FECHA',    formatDate(qso.QSO_DATE)],
     ['HORA UTC', formatTime(qso.TIME_ON)],
@@ -559,42 +573,23 @@ function drawQSL(qso) {
     ['RST TX',   qso.RST_SENT || ''],
     ['RST RX',   qso.RST_RCVD || ''],
   ].filter(d => d[1]);
-
   const colW = (W - 160) / 3;
   details.forEach(([label, value], i) => {
-    const col = i % 3;
-    const row = Math.floor(i / 3);
-    const x = 80 + col * colW;
-    const y = 360 + row * 120;
-
+    const col = i % 3, row = Math.floor(i / 3);
+    const x = 80 + col * colW, y = 360 + row * 120;
     ctx.font = '600 18px "Share Tech Mono", monospace';
-    ctx.fillStyle = '#00e5a0';
-    ctx.fillText(label, x, y);
-
+    ctx.fillStyle = '#00e5a0'; ctx.fillText(label, x, y);
     ctx.font = 'bold 52px "Barlow Condensed", sans-serif';
-    ctx.fillStyle = '#dde8ea';
-    ctx.fillText(value, x, y + 55);
+    ctx.fillStyle = '#dde8ea'; ctx.fillText(value, x, y + 55);
   });
-
-  // Station callsign bottom right
   const stationCall = actInfo.indicativo || '';
   if (stationCall) {
     ctx.font = 'bold 90px "Barlow Condensed", sans-serif';
     ctx.fillStyle = 'rgba(0,229,160,0.15)';
-    ctx.textAlign = 'right';
-    ctx.fillText(stationCall, W - 80, H - 40);
-    ctx.textAlign = 'left';
-
-    ctx.font = '600 20px "Share Tech Mono", monospace';
-    ctx.fillStyle = '#6b8a90';
-    ctx.textAlign = 'right';
-    ctx.fillText('DE', W - 80 - ctx.measureText(stationCall).width * 0.9 - 10, H - 40);
+    ctx.textAlign = 'right'; ctx.fillText(stationCall, W - 80, H - 40);
     ctx.textAlign = 'left';
   }
-
-  // Bottom accent
-  ctx.fillStyle = '#00e5a0';
-  ctx.fillRect(0, H - 4, W, 4);
+  ctx.fillStyle = '#00e5a0'; ctx.fillRect(0, H - 4, W, 4);
 }
 
 function downloadQSL() {
