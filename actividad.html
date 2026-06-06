@@ -567,22 +567,18 @@ function drawQSL(qso) {
       station: actInfo.indicativo||'',
       actname: actInfo.nombre||'',
     };
-    // Use reference dimensions from editor for accurate scaling
-    const refW = diplomaConfig._refW || 800;
-    const refH = diplomaConfig._refH || 500;
-    const scaleX = W / refW;
-    const scaleY = H / refH;
     Object.entries(diplomaConfig).forEach(([id, cfg]) => {
-      if (id.startsWith('_') || !cfg.visible) return;
+      if (id.startsWith('_') || !cfg || !cfg.visible) return;
       const text = FIELD_MAP[id] || '';
       if (!text) return;
       const x = cfg.x / 100 * W;
       const y = cfg.y / 100 * H;
-      const scaledSize = Math.round(cfg.size * scaleX);
-      ctx.font = `${cfg.weight||'400'} ${scaledSize}px '${cfg.font}', sans-serif`;
+      // size is % of canvas width — identical logic to editor
+      const fs = cfg.size / 100 * W;
+      ctx.font = `${cfg.weight||'400'} ${fs}px '${cfg.font}', sans-serif`;
       ctx.fillStyle = cfg.color;
       ctx.shadowColor = 'rgba(0,0,0,.8)'; ctx.shadowBlur = 4;
-      ctx.fillText(text, x, y + scaledSize);
+      ctx.fillText(text, x, y + fs);
       ctx.shadowBlur = 0;
     });
     return;
