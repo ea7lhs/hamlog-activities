@@ -1,8 +1,8 @@
 {
   "call": {
-    "x": 29.1,
-    "y": 15.8,
-    "size": 48,
+    "x": 37.3,
+    "y": 21.3,
+    "size": 120,
     "font": "Barlow Condensed",
     "weight": "900",
     "color": "#5f9109",
@@ -15,7 +15,7 @@
     "font": "Share Tech Mono",
     "weight": "400",
     "color": "#dde8ea",
-    "visible": true
+    "visible": false
   },
   "time": {
     "x": 25,
@@ -24,7 +24,7 @@
     "font": "Share Tech Mono",
     "weight": "400",
     "color": "#dde8ea",
-    "visible": true
+    "visible": false
   },
   "band": {
     "x": 45,
@@ -33,7 +33,7 @@
     "font": "Share Tech Mono",
     "weight": "400",
     "color": "#00e5a0",
-    "visible": true
+    "visible": false
   },
   "mode": {
     "x": 60,
@@ -42,7 +42,7 @@
     "font": "Share Tech Mono",
     "weight": "400",
     "color": "#00e5a0",
-    "visible": true
+    "visible": false
   },
   "rst_s": {
     "x": 5,
@@ -69,12 +69,12 @@
     "font": "Barlow Condensed",
     "weight": "700",
     "color": "rgba(0,229,160,0.3)",
-    "visible": true
+    "visible": false
   },
   "actname": {
-    "x": 5,
-    "y": 65,
-    "size": 22,
+    "x": 17.5,
+    "y": 33.8,
+    "size": 70,
     "font": "Barlow Condensed",
     "weight": "700",
     "color": "#00b8d4",
