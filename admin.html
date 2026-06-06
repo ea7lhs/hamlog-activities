@@ -827,9 +827,7 @@ function markdownToHtml(md) {
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
     .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
     .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/
-
-/g, '</p><p>')
+    .replace(/\n\n/g, '</p><p>')
     .replace(/^(?!<)(.+)$/gm, '<p>$1</p>');
 }
 
