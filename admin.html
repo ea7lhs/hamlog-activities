@@ -623,7 +623,7 @@ async function publish() {
     titulo,
     fecha,
     descripcion: document.getElementById('f-desc').value.trim(),
-    foto: files.foto ? sanitize(files.foto.name) : (editingFolder ? (document.getElementById('foto-name').textContent || null) : null),
+    foto: files.foto ? sanitize(files.foto.name) : (editingItem ? (editingItem.foto || null) : null),
   };
 
   if (currentType === 'log') {
@@ -637,8 +637,12 @@ async function publish() {
   if (['post','evento','galeria'].includes(currentType)) {
     info.contenido = editorToMarkdown();
   }
-  if (currentType === 'galeria' && files.galeria.length) {
-    info.fotos = files.galeria.map(f => sanitize(f.name));
+  if (currentType === 'galeria') {
+    if (files.galeria.length) {
+      info.fotos = files.galeria.map(f => sanitize(f.name));
+    } else if (editingItem && editingItem.fotos) {
+      info.fotos = editingItem.fotos; // preserve existing
+    }
   }
 
   try {
@@ -652,7 +656,7 @@ async function publish() {
 
     if (files.foto) {
       await ghUpload(`${folder}/${sanitize(files.foto.name)}`, await toBase64(files.foto), `Foto: ${titulo}`);
-    }
+    } // else: keep existing foto in repo, already referenced in info.json
     setProgress(65);
 
     if (currentType === 'log' && files.diploma) {
@@ -793,7 +797,8 @@ function setProgress(p) {
 }
 
 // ── Edit existing item ─────────────────────────────────────────────────────
-let editingFolder = null; // null = nueva publicación, 'path/folder' = editando
+let editingFolder = null;
+let editingItem = null; // null = nueva publicación, 'path/folder' = editando
 
 function editItem(item) {
   editingFolder = item._path + '/' + item._folder;
@@ -893,9 +898,11 @@ function resetForm() {
   document.getElementById('editor').innerHTML = '<p>Escribe aquí el contenido...</p>';
   files = {foto:null,adi:null,diploma:null,galeria:[]};
   editingFolder = null;
+  editingItem = null;
   const pb = document.getElementById('btn-publish');
   pb.textContent = '📡 PUBLICAR'; pb.style.background = '';
   editingFolder = null;
+  editingItem = null;
   document.getElementById('btn-publish').textContent = '📡 PUBLICAR';
   document.getElementById('btn-publish').style.background = '';
 }
