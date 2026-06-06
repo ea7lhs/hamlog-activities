@@ -413,9 +413,15 @@ function renderHero(info) {
   document.getElementById('hero-desc').textContent = info.descripcion || '';
 
   if (info.fecha) {
-    const d = new Date(info.fecha);
-    document.getElementById('hero-fecha').textContent =
-      d.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+    const d1 = new Date(info.fecha);
+    const fechaStr = d1.toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
+    let dateText = fechaStr;
+    if (info.fechaFin && info.fechaFin !== info.fecha) {
+      const d2 = new Date(info.fechaFin);
+      dateText += ' – ' + d2.toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
+    }
+    if (info.localizacion) dateText += '  ·  ' + info.localizacion;
+    document.getElementById('hero-fecha').textContent = dateText;
   }
 
   if (info.foto) {
@@ -430,8 +436,14 @@ function renderHero(info) {
       </div>`;
     if (info.fecha) {
       const d = new Date(info.fecha);
-      hero.querySelector('#hero-fecha').textContent =
-        d.toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
+      const d1b = new Date(info.fecha);
+      let dateText2 = d1b.toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
+      if (info.fechaFin && info.fechaFin !== info.fecha) {
+        const d2b = new Date(info.fechaFin);
+        dateText2 += ' – ' + d2b.toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' });
+      }
+      if (info.localizacion) dateText2 += '  ·  ' + info.localizacion;
+      hero.querySelector('#hero-fecha').textContent = dateText2;
     }
   }
 }
@@ -448,6 +460,11 @@ function renderStats() {
     { value: modes.length, label: 'Modos' },
     { value: countries.length, label: 'Países / DXCC' },
   ];
+  // Add duration if multi-day
+  if (actInfo.fecha && actInfo.fechaFin && actInfo.fechaFin !== actInfo.fecha) {
+    const diff = Math.round((new Date(actInfo.fechaFin) - new Date(actInfo.fecha)) / 86400000) + 1;
+    stats.unshift({ value: diff, label: 'Días' });
+  }
 
   document.getElementById('stats-grid').innerHTML = stats
     .map(s => `<div class="stat-box"><div class="stat-value">${s.value}</div><div class="stat-label">${s.label}</div></div>`)
