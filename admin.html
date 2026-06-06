@@ -703,15 +703,13 @@ async function loadContentList() {
       <div class="ci-actions">
         <a class="btn-sm" href="${pageFor(item)}" target="_blank">VER →</a>
         <button class="btn-sm" id="edit-btn-${item._folder}">EDITAR</button>
-        ${item._type === 'actividad' ? `<button class="btn-sm" id="dip-btn-${item._folder}" style="color:var(--warn)">🏅 DIPLOMA</button>` : ''}
+        <button class="btn-sm" id="dip-btn-${item._folder}" style="color:var(--warn)">🏅 DIPLOMA</button>
         <button class="btn-sm danger" id="del-btn-${item._folder}">BORRAR</button>
       </div>`;
     div.querySelector('[id^="edit-btn-"]').addEventListener('click', () => editItem(item));
-    if (item._type === 'actividad') {
-      div.querySelector('[id^="dip-btn-"]')?.addEventListener('click', () => {
-        location.href = `diploma-editor.html?f=${encodeURIComponent(item._path)}&a=${encodeURIComponent(item._folder)}`;
-      });
-    }
+    div.querySelector('[id^="dip-btn-"]').addEventListener('click', () => {
+      location.href = `diploma-editor.html?f=${encodeURIComponent(item._path||'actividades')}&a=${encodeURIComponent(item._folder)}`;
+    });
     div.querySelector('[id^="del-btn-"]').addEventListener('click', () => deleteItem(item));
     list.appendChild(div);
   });
