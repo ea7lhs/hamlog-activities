@@ -593,10 +593,12 @@ function drawQSL(qso) {
       // size is % of canvas width — identical logic to editor
       const fs = cfg.size / 100 * W;
       ctx.font = `${cfg.weight||'400'} ${fs}px '${cfg.font}', sans-serif`;
+      ctx.textBaseline = 'top';
       ctx.fillStyle = cfg.color;
       ctx.shadowColor = 'rgba(0,0,0,.8)'; ctx.shadowBlur = 4;
-      ctx.fillText(text, x, y + fs);
+      ctx.fillText(text, x, y);
       ctx.shadowBlur = 0;
+      ctx.textBaseline = 'alphabetic';
     });
     return;
   }
