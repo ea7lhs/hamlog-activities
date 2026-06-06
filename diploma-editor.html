@@ -183,7 +183,7 @@ const FIELD_DEFS = [
   { id:'mode',      label:'Modo',                 sample:'SSB',         default:{x:60,y:35,size:3.5,font:'Share Tech Mono', weight:'400',color:'#00e5a0',visible:true}},
   { id:'rst_s',     label:'RST Enviado',          sample:'59',          default:{x:5,y:50,size:2.8,font:'Share Tech Mono',  weight:'400',color:'#6b8a90',visible:false}},
   { id:'rst_r',     label:'RST Recibido',         sample:'57',          default:{x:20,y:50,size:2.8,font:'Share Tech Mono', weight:'400',color:'#6b8a90',visible:false}},
-  { id:'station',   label:'Indicativo estación',  sample:'EA7LHS',      default:{x:60,y:80,size:4.5,font:'Barlow Condensed',weight:'700',color:'rgba(0,229,160,0.3)',visible:true}},
+  { id:'station',   label:'Indicativo estación',  sample:'EA7LHS',      default:{x:60,y:80,size:4.5,font:'Barlow Condensed',weight:'700',color:'#00e5a0',visible:true}},
   { id:'actname',   label:'Nombre actividad',     sample:'POTA EA5-001',default:{x:5,y:65,size:2.8,font:'Barlow Condensed',weight:'700',color:'#00b8d4',visible:true}},
 ];
 
@@ -304,12 +304,7 @@ function buildSidebar() {
           <label>Color</label>
           <input type="color" id="color-${f.id}" value="${rgbaToHex(cfg.color)}">
         </div>
-        <div>
-          <label>Opacidad</label>
-          <input type="range" id="alpha-${f.id}" min="0" max="1" step="0.05"
-            value="${getAlpha(cfg.color)}"
-            style="width:100%;accent-color:var(--accent);cursor:pointer">
-        </div>
+
         <div style="grid-column:1/-1">
           <label>Fuente</label>
           <select id="font-${f.id}">
@@ -339,7 +334,7 @@ function buildSidebar() {
 
     // Color
     div.querySelector(`#color-${f.id}`).addEventListener('input', e => {
-      fieldConfig[f.id].color = hexToDisplay(e.target.value, fieldConfig[f.id].color);
+      fieldConfig[f.id].color = e.target.value;
       updateLabel(f.id);
     });
 
@@ -349,16 +344,6 @@ function buildSidebar() {
       updateLabel(f.id);
     });
 
-    // Opacity
-    div.querySelector(`#alpha-${f.id}`).addEventListener('input', e => {
-      const hex = div.querySelector(`#color-${f.id}`).value;
-      const r = parseInt(hex.slice(1,3),16);
-      const g = parseInt(hex.slice(3,5),16);
-      const b = parseInt(hex.slice(5,7),16);
-      const a = parseFloat(e.target.value);
-      fieldConfig[f.id].color = a >= 1 ? hex : `rgba(${r},${g},${b},${a})`;
-      updateLabel(f.id);
-    });
 
     list.appendChild(div);
   });
@@ -582,26 +567,6 @@ function rgbaToHex(c){
   return '#'+[r,g,b].map(x=>Math.max(0,Math.min(255,x)).toString(16).padStart(2,'0')).join('');
 }
 
-// Convert hex + optional alpha back to rgba for rendering
-function getAlpha(c){
-  if(!c)return 1;
-  if(c.startsWith('#'))return 1;
-  const m=c.match(/[\d.]+/g);
-  return m&&m[3]!==undefined?parseFloat(m[3]):1;
-}
-
-function hexToDisplay(hex, originalColor) {
-  // If original had alpha, preserve it but update hue
-  if (originalColor && originalColor.includes('rgba')) {
-    const m = originalColor.match(/[\d.]+/g);
-    const alpha = m && m[3] ? parseFloat(m[3]) : 1;
-    const r = parseInt(hex.slice(1,3),16);
-    const g = parseInt(hex.slice(3,5),16);
-    const b = parseInt(hex.slice(5,7),16);
-    return `rgba(${r},${g},${b},${alpha})`;
-  }
-  return hex;
-}
 let toastT;
 function toast(msg,err=false){
   const el=document.getElementById('toast');
