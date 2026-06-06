@@ -456,14 +456,14 @@ function showClerkLogin() {
 
 function fallbackTokenLogin() {
   // Sin Clerk: pedir token manualmente (modo desarrollo)
-  const saved = sessionStorage.getItem('gh_token');
+  const saved = localStorage.getItem('gh_token');
   if (saved) { ghToken = saved; showPanel('Admin', null); return; }
 
   document.getElementById('btn-login').onclick = () => {
     const t = prompt('Token de GitHub (modo desarrollo — configura Clerk para producción):');
     if (t) {
       ghToken = t.trim();
-      sessionStorage.setItem('gh_token', ghToken);
+      localStorage.setItem('gh_token', ghToken);
       showPanel('Admin', null);
     }
   };
@@ -484,7 +484,7 @@ function showPanel(name, avatar) {
 
 function logout() {
   ghToken = '';
-  sessionStorage.removeItem('gh_token');
+  localStorage.removeItem('gh_token');
   if (window.Clerk) window.Clerk.signOut();
   location.reload();
 }
