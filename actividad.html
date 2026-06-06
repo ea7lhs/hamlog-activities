@@ -231,6 +231,32 @@
     border: 1px dashed var(--border);
   }
 
+  .result-row {
+    background: var(--surface); border: 1px solid var(--border);
+    padding: 1rem 1.2rem; margin-bottom: .5rem;
+    display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+    animation: fadeUp .25s ease both;
+  }
+  .result-call {
+    font-family: var(--condensed); font-size: 1.6rem; font-weight: 900;
+    color: var(--text); min-width: 120px;
+  }
+  .result-meta {
+    display: flex; gap: .6rem; flex-wrap: wrap; flex: 1;
+  }
+  .result-meta span {
+    font-family: var(--mono); font-size: .72rem; color: var(--text-dim);
+    background: var(--surface2); padding: .2rem .6rem; border: 1px solid var(--border);
+  }
+  .btn-qsl-dl {
+    margin-left: auto;
+    background: var(--accent); color: var(--bg);
+    border: none; font-family: var(--condensed); font-weight: 700;
+    font-size: .9rem; padding: .5rem 1.2rem; cursor: pointer;
+    letter-spacing: .08em; transition: opacity .2s; white-space: nowrap;
+  }
+  .btn-qsl-dl:hover { opacity: .85; }
+
   footer {
     position: relative; z-index: 1;
     border-top: 1px solid var(--border);
@@ -264,32 +290,16 @@
   </div>
 
   <div id="content" style="display:none">
-    <div class="section-label">Estadísticas</div>
     <div class="stats-grid" id="stats-grid"></div>
 
-    <div class="section-label">Log de contactos</div>
+    <div class="section-label">¿Estás en el log?</div>
     <div class="search-bar">
       <input type="text" class="search-input" id="search-input"
-        placeholder="Buscar por indicativo, banda, modo, país...">
+        placeholder="Escribe tu indicativo..." autocomplete="off" autocapitalize="characters" spellcheck="false">
     </div>
-    <div class="log-table-wrap">
-      <table id="log-table">
-        <thead>
-          <tr>
-            <th>Indicativo</th>
-            <th>Fecha</th>
-            <th>Hora UTC</th>
-            <th>Banda</th>
-            <th>Modo</th>
-            <th>RST TX</th>
-            <th>RST RX</th>
-            <th>País</th>
-            <th>QSL</th>
-          </tr>
-        </thead>
-        <tbody id="log-tbody"></tbody>
-      </table>
-      <div id="no-results" class="no-results" style="display:none">No se encontraron contactos.</div>
+    <div id="search-results"></div>
+    <div id="search-hint" style="font-family:var(--mono);font-size:.72rem;color:var(--text-dim);text-align:center;padding:2rem">
+      Introduce tu indicativo para buscar tus contactos y descargar la QSL.
     </div>
   </div>
 </main>
@@ -380,17 +390,18 @@ async function load() {
   document.getElementById('loading').style.display = 'none';
   document.getElementById('content').style.display = 'block';
   renderStats();
-  renderTable(allQSOs);
+  renderSearchResults(null);
 
-  document.getElementById('search-input').addEventListener('input', e => {
-    const q = e.target.value.toLowerCase().trim();
-    const filtered = q
-      ? allQSOs.filter(qso =>
-          [qso.CALL, qso.BAND, qso.MODE, qso.COUNTRY, qso.NAME]
-            .some(v => v && v.toLowerCase().includes(q))
-        )
-      : allQSOs;
-    renderTable(filtered);
+  const searchInput = document.getElementById('search-input');
+  searchInput.addEventListener('input', e => {
+    const q = e.target.value.trim().toUpperCase();
+    if (q.length < 2) { renderSearchResults(null); return; }
+    const filtered = allQSOs.filter(qso => (qso.CALL||'').toUpperCase().includes(q));
+    renderSearchResults(filtered);
+  });
+  // Show all if Enter pressed with empty
+  searchInput.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.target.value.trim()) renderSearchResults(null);
   });
 }
 
@@ -444,31 +455,50 @@ function renderStats() {
 }
 
 function renderTable(qsos) {
-  const tbody = document.getElementById('log-tbody');
-  const noRes = document.getElementById('no-results');
+  // legacy — not used in new UI
+}
 
-  if (qsos.length === 0) {
-    tbody.innerHTML = '';
-    noRes.style.display = 'block';
+function renderSearchResults(qsos) {
+  const wrap = document.getElementById('search-results');
+  const hint = document.getElementById('search-hint');
+
+  if (!qsos) {
+    wrap.innerHTML = '';
+    hint.style.display = 'block';
     return;
   }
-  noRes.style.display = 'none';
 
-  tbody.innerHTML = qsos.map(q => {
+  hint.style.display = 'none';
+
+  if (qsos.length === 0) {
+    wrap.innerHTML = `<div class="no-results">Indicativo no encontrado en este log.</div>`;
+    return;
+  }
+
+  wrap.innerHTML = qsos.map(q => {
     const date = formatDate(q.QSO_DATE);
-    const time = formatTime(q.TIME_ON);
-    return `<tr>
-      <td>${q.CALL || ''}</td>
-      <td>${date}</td>
-      <td>${time}</td>
-      <td>${q.BAND || ''}</td>
-      <td>${q.MODE || ''}</td>
-      <td>${q.RST_SENT || ''}</td>
-      <td>${q.RST_RCVD || ''}</td>
-      <td>${q.COUNTRY || q.DXCC || ''}</td>
-      <td><button class="btn-qsl" onclick="openQSL(${JSON.stringify(q).replace(/"/g,'&quot;')})">QSL</button></td>
-    </tr>`;
+    const band = q.BAND || '';
+    const mode = q.MODE || '';
+    return `<div class="result-row">
+      <div class="result-call">${q.CALL || ''}</div>
+      <div class="result-meta">
+        ${date ? `<span>${date}</span>` : ''}
+        ${band ? `<span>${band}</span>` : ''}
+        ${mode ? `<span>${mode}</span>` : ''}
+      </div>
+      <button class="btn-qsl-dl" data-qso='${JSON.stringify(q).replace(/'/g,"&#39;")}'>
+        ⬇ DESCARGAR QSL
+      </button>
+    </div>`;
   }).join('');
+
+  // Attach events
+  wrap.querySelectorAll('.btn-qsl-dl').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const q = JSON.parse(btn.dataset.qso.replace(/&#39;/g,"'"));
+      openQSL(q);
+    });
+  });
 }
 
 function formatDate(d) {
