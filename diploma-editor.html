@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor de Diploma — HamLog</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@400;600;700&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0e0f;--surface:#111618;--surface2:#1a2022;
+  --border:#2a3538;--accent:#00e5a0;--accent2:#00b8d4;
+  --danger:#e53935;--text:#dde8ea;--text-dim:#6b8a90;
+  --mono:'Share Tech Mono',monospace;--sans:'Barlow',sans-serif;--cond:'Barlow Condensed',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(0,229,160,.03) 40px),
+  repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(0,229,160,.03) 40px);}
+
+header{position:relative;z-index:10;padding:1rem 1.5rem;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap}
+.header-left{display:flex;align-items:center;gap:1rem}
+.back-link{font-family:var(--mono);font-size:.7rem;color:var(--text-dim);text-decoration:none;letter-spacing:.1em;transition:color .2s}
+.back-link:hover{color:var(--accent)}
+.header-title{font-family:var(--cond);font-size:1.2rem;font-weight:700}
+.header-title span{color:var(--accent)}
+
+.layout{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 57px);overflow:hidden}
+@media(max-width:800px){.layout{grid-template-columns:1fr;grid-template-rows:auto 1fr}}
+
+/* Sidebar */
+.sidebar{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;padding:1rem;display:flex;flex-direction:column;gap:1rem;position:relative;z-index:1}
+.section-label{font-family:var(--mono);font-size:.6rem;color:var(--accent);letter-spacing:.2em;text-transform:uppercase;margin-bottom:.5rem;display:flex;align-items:center;gap:.5rem}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Field controls */
+.field-item{background:var(--surface2);border:1px solid var(--border);padding:.7rem;transition:border-color .2s}
+.field-item.active{border-color:var(--accent)}
+.field-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem}
+.field-toggle{width:16px;height:16px;cursor:pointer;accent-color:var(--accent)}
+.field-name{font-family:var(--mono);font-size:.72rem;color:var(--text);flex:1}
+.field-controls{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}
+.field-controls label{font-family:var(--mono);font-size:.58rem;color:var(--text-dim);display:block;margin-bottom:.2rem}
+.field-controls input[type=number],.field-controls select,.field-controls input[type=color]{
+  width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);
+  font-family:var(--mono);font-size:.72rem;padding:.3rem .4rem;outline:none;
+}
+.field-controls input[type=color]{padding:.1rem;height:28px;cursor:pointer}
+.field-controls input:focus,.field-controls select:focus{border-color:var(--accent)}
+
+/* Buttons */
+.btn-save{width:100%;padding:.8rem;background:var(--accent);color:var(--bg);border:none;
+  font-family:var(--cond);font-weight:700;font-size:1rem;letter-spacing:.1em;cursor:pointer;transition:opacity .2s}
+.btn-save:hover{opacity:.85}
+.btn-preview{width:100%;padding:.7rem;background:none;color:var(--accent2);border:1px solid var(--accent2);
+  font-family:var(--cond);font-weight:700;font-size:.9rem;letter-spacing:.1em;cursor:pointer;transition:all .2s;margin-top:.4rem}
+.btn-preview:hover{background:var(--accent2);color:var(--bg)}
+
+/* Canvas area */
+.canvas-area{position:relative;z-index:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:2rem;background:var(--bg)}
+#diploma-wrap{position:relative;display:inline-block;cursor:crosshair}
+#diploma-bg{display:block;max-width:100%;user-select:none;pointer-events:none}
+.diploma-placeholder{width:800px;max-width:90vw;height:500px;background:var(--surface2);border:2px dashed var(--border);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;color:var(--text-dim)}
+.diploma-placeholder .icon{font-size:3rem}
+.diploma-placeholder p{font-family:var(--mono);font-size:.75rem;text-align:center;line-height:1.8}
+
+/* Draggable labels */
+.field-label{
+  position:absolute;cursor:move;user-select:none;
+  white-space:nowrap;
+  padding:2px 4px;
+  border:1px dashed transparent;
+  transition:border-color .15s;
+  line-height:1.2;
+}
+.field-label:hover,.field-label.dragging{border-color:var(--accent);z-index:10}
+.field-label.selected{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.field-label.hidden{display:none}
+
+/* Toast */
+#toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--surface);border:1px solid var(--accent);
+  color:var(--accent);font-family:var(--mono);font-size:.75rem;padding:.7rem 1.2rem;z-index:999;
+  transform:translateY(16px);opacity:0;transition:all .3s;pointer-events:none}
+#toast.show{transform:translateY(0);opacity:1}
+#toast.error{border-color:var(--danger);color:var(--danger)}
+
+/* Preview modal */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,14,15,.92);z-index:100;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border:1px solid var(--border);max-width:800px;width:100%}
+.modal-header{padding:1rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.modal-title{font-family:var(--cond);font-size:1.1rem;font-weight:700}
+.modal-close{background:none;border:none;color:var(--text-dim);font-size:1rem;cursor:pointer}
+.modal-body{padding:1.2rem}
+#preview-canvas{width:100%;display:block;border:1px solid var(--border);margin-bottom:.8rem}
+.btn-dl{width:100%;padding:.8rem;background:var(--accent);color:var(--bg);border:none;
+  font-family:var(--cond);font-weight:700;font-size:1rem;cursor:pointer}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <a href="#" class="back-link" id="back-link">← VOLVER</a>
+    <div class="header-title">Ham<span>Log</span> · Editor de Diploma</div>
+  </div>
+  <div id="act-name" style="font-family:var(--mono);font-size:.75rem;color:var(--text-dim)"></div>
+</header>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div>
+      <div class="section-label">Campos</div>
+      <div id="fields-list" style="display:flex;flex-direction:column;gap:.5rem"></div>
+    </div>
+
+    <div>
+      <div class="section-label">Acciones</div>
+      <button class="btn-save" onclick="saveConfig()">💾 GUARDAR CONFIGURACIÓN</button>
+      <button class="btn-preview" onclick="openPreview()">👁 PREVISUALIZAR QSL</button>
+    </div>
+
+    <div style="font-family:var(--mono);font-size:.62rem;color:var(--text-dim);line-height:1.8;padding:.5rem;border:1px solid var(--border)">
+      💡 Arrastra los campos sobre el diploma.<br>
+      Activa/desactiva con el checkbox.<br>
+      Ajusta fuente, tamaño y color.<br>
+      Guarda para aplicar a todas las QSLs.
+    </div>
+  </div>
+
+  <!-- Canvas -->
+  <div class="canvas-area">
+    <div id="diploma-wrap">
+      <div class="diploma-placeholder" id="diploma-placeholder">
+        <div class="icon">🏅</div>
+        <p>Cargando imagen del diploma...<br>Si no hay diploma, se usará<br>un fondo generado automáticamente.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Preview modal -->
+<div class="modal-overlay" id="preview-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Vista previa QSL</span>
+      <button class="modal-close" onclick="closePreview()">✕</button>
+    </div>
+    <div class="modal-body">
+      <canvas id="preview-canvas" width="1400" height="900"></canvas>
+      <button class="btn-dl" onclick="downloadPreview()">⬇ DESCARGAR QSL DE EJEMPLO</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ── Config ─────────────────────────────────────────────────────────────────
+const GITHUB_USER   = 'ea7lhs';
+const GITHUB_REPO   = 'hamlog-activities';
+const GITHUB_BRANCH = 'main';
+const RAW = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}`;
+const API = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents`;
+
+const params   = new URLSearchParams(location.search);
+const actPath  = params.get('f') || 'actividades';
+const actFolder= params.get('a') || '';
+const ghToken  = sessionStorage.getItem('gh_token') || '';
+
+document.getElementById('back-link').href = `admin.html`;
+
+// ── Field definitions ──────────────────────────────────────────────────────
+const FIELD_DEFS = [
+  { id:'call',      label:'Indicativo contacto', sample:'EA7XYZ',      default:{x:5,y:15,size:48,font:'Barlow Condensed',weight:'900',color:'#dde8ea',visible:true}},
+  { id:'date',      label:'Fecha',               sample:'15/05/2025',  default:{x:5,y:35,size:28,font:'Share Tech Mono',  weight:'400',color:'#dde8ea',visible:true}},
+  { id:'time',      label:'Hora UTC',             sample:'14:32',       default:{x:25,y:35,size:28,font:'Share Tech Mono', weight:'400',color:'#dde8ea',visible:true}},
+  { id:'band',      label:'Banda',                sample:'40m',         default:{x:45,y:35,size:28,font:'Share Tech Mono', weight:'400',color:'#00e5a0',visible:true}},
+  { id:'mode',      label:'Modo',                 sample:'SSB',         default:{x:60,y:35,size:28,font:'Share Tech Mono', weight:'400',color:'#00e5a0',visible:true}},
+  { id:'rst_s',     label:'RST Enviado',          sample:'59',          default:{x:5,y:50,size:22,font:'Share Tech Mono',  weight:'400',color:'#6b8a90',visible:false}},
+  { id:'rst_r',     label:'RST Recibido',         sample:'57',          default:{x:20,y:50,size:22,font:'Share Tech Mono', weight:'400',color:'#6b8a90',visible:false}},
+  { id:'station',   label:'Indicativo estación',  sample:'EA7LHS',      default:{x:60,y:80,size:36,font:'Barlow Condensed',weight:'700',color:'rgba(0,229,160,0.3)',visible:true}},
+  { id:'actname',   label:'Nombre actividad',     sample:'POTA EA5-001',default:{x:5,y:65,size:22,font:'Barlow Condensed',weight:'700',color:'#00b8d4',visible:true}},
+];
+
+const FONTS = ['Barlow Condensed','Share Tech Mono','Barlow','serif','monospace'];
+
+let fieldConfig = {};   // id → {x,y,size,font,weight,color,visible}
+let actInfo = {};
+let diplomaImg = null;
+let wrapW = 800, wrapH = 500;
+
+// ── Init ───────────────────────────────────────────────────────────────────
+async function init() {
+  if (!actFolder) { toast('No se especificó actividad', true); return; }
+  document.getElementById('act-name').textContent = actFolder;
+
+  // Load activity info
+  try {
+    const r = await fetch(`${RAW}/${actPath}/${actFolder}/info.json`);
+    if (r.ok) {
+      actInfo = await r.json();
+      document.getElementById('act-name').textContent = actInfo.nombre || actFolder;
+    }
+  } catch {}
+
+  // Load existing config
+  try {
+    const r = await fetch(`${RAW}/${actPath}/${actFolder}/diploma.config.json`);
+    if (r.ok) fieldConfig = await r.json();
+  } catch {}
+
+  // Fill defaults for missing fields
+  FIELD_DEFS.forEach(f => {
+    if (!fieldConfig[f.id]) fieldConfig[f.id] = {...f.default};
+  });
+
+  // Load diploma image
+  try {
+    const imgUrl = `${RAW}/${actPath}/${actFolder}/diploma.png`;
+    diplomaImg = await loadImg(imgUrl);
+    renderDiplomaImg();
+  } catch {
+    renderPlaceholder();
+  }
+
+  buildSidebar();
+  renderLabels();
+}
+
+function renderDiplomaImg() {
+  const wrap = document.getElementById('diploma-wrap');
+  wrap.innerHTML = `<img id="diploma-bg" src="${RAW}/${actPath}/${actFolder}/diploma.png" alt="diploma" crossorigin="anonymous">`;
+  const img = document.getElementById('diploma-bg');
+  img.onload = () => {
+    wrapW = img.offsetWidth || img.naturalWidth;
+    wrapH = img.offsetHeight || img.naturalHeight;
+    renderLabels();
+  };
+}
+
+function renderPlaceholder() {
+  const wrap = document.getElementById('diploma-wrap');
+  wrap.style.width  = wrapW + 'px';
+  wrap.style.height = wrapH + 'px';
+  wrap.innerHTML = `
+    <div style="width:${wrapW}px;height:${wrapH}px;background:linear-gradient(135deg,#0a0e0f,#0f1e20);position:relative;overflow:hidden">
+      <div style="position:absolute;inset:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(0,229,160,.04) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(0,229,160,.04) 40px)"></div>
+      <div style="position:absolute;bottom:0;left:0;right:0;height:4px;background:#00e5a0"></div>
+      <div style="position:absolute;top:0;left:0;right:0;height:4px;background:#00e5a0"></div>
+    </div>`;
+}
+
+// ── Sidebar ────────────────────────────────────────────────────────────────
+function buildSidebar() {
+  const list = document.getElementById('fields-list');
+  list.innerHTML = '';
+  FIELD_DEFS.forEach(f => {
+    const cfg = fieldConfig[f.id];
+    const div = document.createElement('div');
+    div.className = 'field-item' + (cfg.visible ? ' active' : '');
+    div.id = `fi-${f.id}`;
+    div.innerHTML = `
+      <div class="field-header">
+        <input type="checkbox" class="field-toggle" id="toggle-${f.id}" ${cfg.visible?'checked':''}>
+        <label class="field-name" for="toggle-${f.id}">${f.label}</label>
+      </div>
+      <div class="field-controls" style="${cfg.visible?'':'opacity:.4;pointer-events:none'}">
+        <div>
+          <label>Tamaño</label>
+          <input type="number" id="size-${f.id}" value="${cfg.size}" min="8" max="120" step="2">
+        </div>
+        <div>
+          <label>Color</label>
+          <input type="color" id="color-${f.id}" value="${rgbaToHex(cfg.color)}">
+        </div>
+        <div style="grid-column:1/-1">
+          <label>Fuente</label>
+          <select id="font-${f.id}">
+            ${FONTS.map(fn => `<option ${cfg.font===fn?'selected':''}>${fn}</option>`).join('')}
+          </select>
+        </div>
+      </div>`;
+
+    // Toggle visibility
+    div.querySelector(`#toggle-${f.id}`).addEventListener('change', e => {
+      fieldConfig[f.id].visible = e.target.checked;
+      div.classList.toggle('active', e.target.checked);
+      div.querySelector('.field-controls').style.opacity = e.target.checked ? '1' : '.4';
+      div.querySelector('.field-controls').style.pointerEvents = e.target.checked ? '' : 'none';
+      const lbl = document.getElementById(`lbl-${f.id}`);
+      if (lbl) lbl.classList.toggle('hidden', !e.target.checked);
+    });
+
+    // Size
+    div.querySelector(`#size-${f.id}`).addEventListener('input', e => {
+      fieldConfig[f.id].size = parseInt(e.target.value);
+      updateLabel(f.id);
+    });
+
+    // Color
+    div.querySelector(`#color-${f.id}`).addEventListener('input', e => {
+      fieldConfig[f.id].color = e.target.value;
+      updateLabel(f.id);
+    });
+
+    // Font
+    div.querySelector(`#font-${f.id}`).addEventListener('change', e => {
+      fieldConfig[f.id].font = e.target.value;
+      updateLabel(f.id);
+    });
+
+    list.appendChild(div);
+  });
+}
+
+// ── Labels on canvas ───────────────────────────────────────────────────────
+function renderLabels() {
+  // Remove existing labels
+  document.querySelectorAll('.field-label').forEach(el => el.remove());
+  const wrap = document.getElementById('diploma-wrap');
+  wrapW = wrap.offsetWidth  || wrapW;
+  wrapH = wrap.offsetHeight || wrapH;
+
+  FIELD_DEFS.forEach(f => {
+    const cfg = fieldConfig[f.id];
+    const lbl = document.createElement('div');
+    lbl.className = 'field-label' + (cfg.visible ? '' : ' hidden');
+    lbl.id = `lbl-${f.id}`;
+    lbl.textContent = getSampleText(f);
+    applyLabelStyle(lbl, cfg);
+    lbl.style.left = (cfg.x / 100 * wrapW) + 'px';
+    lbl.style.top  = (cfg.y / 100 * wrapH) + 'px';
+    makeDraggable(lbl, f.id);
+    wrap.appendChild(lbl);
+  });
+}
+
+function applyLabelStyle(lbl, cfg) {
+  lbl.style.fontSize   = cfg.size + 'px';
+  lbl.style.fontFamily = `'${cfg.font}', sans-serif`;
+  lbl.style.fontWeight = cfg.weight || '400';
+  lbl.style.color      = cfg.color;
+  lbl.style.textShadow = '1px 1px 3px rgba(0,0,0,.8)';
+}
+
+function updateLabel(id) {
+  const lbl = document.getElementById(`lbl-${id}`);
+  if (lbl) applyLabelStyle(lbl, fieldConfig[id]);
+}
+
+function getSampleText(f) {
+  if (f.id === 'station') return actInfo.indicativo || f.sample;
+  if (f.id === 'actname') return actInfo.nombre || f.sample;
+  return f.sample;
+}
+
+// ── Drag & Drop ────────────────────────────────────────────────────────────
+function makeDraggable(el, fieldId) {
+  let startX, startY, startLeft, startTop;
+
+  el.addEventListener('mousedown', e => {
+    e.preventDefault();
+    startX    = e.clientX;
+    startY    = e.clientY;
+    startLeft = parseInt(el.style.left) || 0;
+    startTop  = parseInt(el.style.top)  || 0;
+    el.classList.add('dragging');
+
+    const onMove = e => {
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      const newLeft = Math.max(0, Math.min(wrapW - 10, startLeft + dx));
+      const newTop  = Math.max(0, Math.min(wrapH - 10, startTop  + dy));
+      el.style.left = newLeft + 'px';
+      el.style.top  = newTop  + 'px';
+      fieldConfig[fieldId].x = Math.round(newLeft / wrapW * 100 * 10) / 10;
+      fieldConfig[fieldId].y = Math.round(newTop  / wrapH * 100 * 10) / 10;
+    };
+
+    const onUp = () => {
+      el.classList.remove('dragging');
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  // Touch support
+  el.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    startX    = t.clientX;
+    startY    = t.clientY;
+    startLeft = parseInt(el.style.left) || 0;
+    startTop  = parseInt(el.style.top)  || 0;
+
+    const onMove = e => {
+      e.preventDefault();
+      const t = e.touches[0];
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      const newLeft = Math.max(0, Math.min(wrapW - 10, startLeft + dx));
+      const newTop  = Math.max(0, Math.min(wrapH - 10, startTop  + dy));
+      el.style.left = newLeft + 'px';
+      el.style.top  = newTop  + 'px';
+      fieldConfig[fieldId].x = Math.round(newLeft / wrapW * 100 * 10) / 10;
+      fieldConfig[fieldId].y = Math.round(newTop  / wrapH * 100 * 10) / 10;
+    };
+    const onEnd = () => {
+      document.removeEventListener('touchmove', onMove);
+      document.removeEventListener('touchend', onEnd);
+    };
+    document.addEventListener('touchmove', onMove, {passive:false});
+    document.addEventListener('touchend', onEnd);
+  });
+}
+
+// ── Save ───────────────────────────────────────────────────────────────────
+async function saveConfig() {
+  if (!ghToken) { toast('Inicia sesión primero en el panel de admin', true); return; }
+  const path = `${actPath}/${actFolder}/diploma.config.json`;
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(fieldConfig, null, 2))));
+
+  // Get SHA if exists
+  let sha;
+  try {
+    const r = await fetch(`${API}/${path}`, {
+      headers:{Authorization:`token ${ghToken}`,Accept:'application/vnd.github.v3+json'}
+    });
+    if (r.ok) sha = (await r.json()).sha;
+  } catch {}
+
+  const body = {message:`Actualiza configuración diploma: ${actFolder}`, content, branch:GITHUB_BRANCH};
+  if (sha) body.sha = sha;
+
+  const r = await fetch(`${API}/${path}`, {
+    method:'PUT',
+    headers:{Authorization:`token ${ghToken}`,Accept:'application/vnd.github.v3+json','Content-Type':'application/json'},
+    body: JSON.stringify(body)
+  });
+
+  if (r.ok) toast('✓ Configuración guardada');
+  else toast('Error al guardar', true);
+}
+
+// ── Preview ────────────────────────────────────────────────────────────────
+function openPreview() {
+  document.getElementById('preview-modal').classList.add('open');
+  drawPreview({
+    CALL:'EA7XYZ', QSO_DATE:'20250515', TIME_ON:'1432',
+    BAND:'40m', MODE:'SSB', RST_SENT:'59', RST_RCVD:'57'
+  });
+}
+function closePreview() { document.getElementById('preview-modal').classList.remove('open'); }
+
+function drawPreview(qso) {
+  const canvas = document.getElementById('preview-canvas');
+  const ctx    = canvas.getContext('2d');
+  const W = 1400, H = 900;
+  canvas.width = W; canvas.height = H;
+
+  // Background
+  if (diplomaImg) {
+    ctx.drawImage(diplomaImg, 0, 0, W, H);
+  } else {
+    const g = ctx.createLinearGradient(0,0,W,H);
+    g.addColorStop(0,'#0a0e0f'); g.addColorStop(1,'#0f1e20');
+    ctx.fillStyle = g; ctx.fillRect(0,0,W,H);
+    ctx.strokeStyle='rgba(0,229,160,.04)'; ctx.lineWidth=1;
+    for(let x=0;x<W;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+    for(let y=0;y<H;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+    ctx.fillStyle='#00e5a0'; ctx.fillRect(0,0,W,4); ctx.fillRect(0,H-4,W,4);
+  }
+
+  const getValue = id => {
+    const map = {
+      call:    qso.CALL||'',
+      date:    fmtDate(qso.QSO_DATE),
+      time:    fmtTime(qso.TIME_ON),
+      band:    qso.BAND||'',
+      mode:    qso.MODE||'',
+      rst_s:   qso.RST_SENT||'',
+      rst_r:   qso.RST_RCVD||'',
+      station: actInfo.indicativo||'',
+      actname: actInfo.nombre||'',
+    };
+    return map[id] || '';
+  };
+
+  FIELD_DEFS.forEach(f => {
+    const cfg = fieldConfig[f.id];
+    if (!cfg.visible) return;
+    const x = cfg.x / 100 * W;
+    const y = cfg.y / 100 * H;
+    ctx.font = `${cfg.weight||'400'} ${cfg.size * (W/800)}px '${cfg.font}', sans-serif`;
+    ctx.fillStyle = cfg.color;
+    ctx.shadowColor = 'rgba(0,0,0,.8)';
+    ctx.shadowBlur  = 4;
+    ctx.fillText(getValue(f.id), x, y + cfg.size * (W/800));
+    ctx.shadowBlur = 0;
+  });
+}
+
+function downloadPreview() {
+  const canvas = document.getElementById('preview-canvas');
+  const a = document.createElement('a');
+  a.download = `QSL_preview_${actFolder}.png`;
+  a.href = canvas.toDataURL('image/png');
+  a.click();
+}
+
+// ── Utils ──────────────────────────────────────────────────────────────────
+function loadImg(src) {
+  return new Promise((res,rej) => {
+    const img = new Image(); img.crossOrigin='anonymous';
+    img.onload=()=>res(img); img.onerror=rej; img.src=src;
+  });
+}
+function fmtDate(d){if(!d||d.length<8)return d||'';return `${d.slice(6,8)}/${d.slice(4,6)}/${d.slice(0,4)}`;}
+function fmtTime(t){if(!t||t.length<4)return t||'';return `${t.slice(0,2)}:${t.slice(2,4)}`;}
+function rgbaToHex(c){
+  if(!c)return '#ffffff';
+  if(c.startsWith('#'))return c.slice(0,7);
+  const m=c.match(/[\d.]+/g);
+  if(!m)return '#ffffff';
+  return '#'+[m[0],m[1],m[2]].map(x=>parseInt(x).toString(16).padStart(2,'0')).join('');
+}
+let toastT;
+function toast(msg,err=false){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='show'+(err?' error':'');
+  clearTimeout(toastT); toastT=setTimeout(()=>el.className='',3000);
+}
+
+document.getElementById('preview-modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closePreview();});
+init();
+</script>
+</body>
+</html>
