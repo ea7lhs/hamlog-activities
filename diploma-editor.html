@@ -211,7 +211,15 @@ async function init() {
   // Load existing config
   try {
     const r = await fetch(`${RAW}/${actPath}/${actFolder}/diploma.config.json`);
-    if (r.ok) fieldConfig = await r.json();
+    if (r.ok) {
+      fieldConfig = await r.json();
+      // Migrate old px-based sizes to % (if size > 20 it's px, convert assuming 800px ref)
+      Object.keys(fieldConfig).forEach(k => {
+        if (fieldConfig[k] && fieldConfig[k].size > 20) {
+          fieldConfig[k].size = Math.round(fieldConfig[k].size / 800 * 100 * 10) / 10;
+        }
+      });
+    }
   } catch {}
 
   // Fill defaults for missing fields
@@ -246,9 +254,12 @@ function renderDiplomaImg() {
     img.style.width  = Math.round(wrapW * scale) + 'px';
     img.style.height = Math.round(wrapH * scale) + 'px';
     // Use displayed size for drag positioning
-    wrapW = img.offsetWidth || Math.round(wrapW * scale);
-    wrapH = img.offsetHeight || Math.round(wrapH * scale);
-    renderLabels();
+    setTimeout(() => {
+      wrapW = img.offsetWidth || Math.round(wrapW * scale);
+      wrapH = img.offsetHeight || Math.round(wrapH * scale);
+      buildSidebar();   // rebuild with correct fieldConfig values
+      renderLabels();   // reposition with correct wrapW/wrapH
+    }, 50);
   };
 }
 
