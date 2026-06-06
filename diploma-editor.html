@@ -236,8 +236,17 @@ function renderDiplomaImg() {
   wrap.innerHTML = `<img id="diploma-bg" src="${RAW}/${actPath}/${actFolder}/diploma.png" alt="diploma" crossorigin="anonymous">`;
   const img = document.getElementById('diploma-bg');
   img.onload = () => {
-    wrapW = img.offsetWidth || img.naturalWidth;
-    wrapH = img.offsetHeight || img.naturalHeight;
+    // Use natural dimensions as base reference
+    wrapW = img.naturalWidth;
+    wrapH = img.naturalHeight;
+    // Scale down for display if too large
+    const maxW = document.querySelector('.canvas-area').offsetWidth - 64;
+    const scale = wrapW > maxW ? maxW / wrapW : 1;
+    img.style.width  = Math.round(wrapW * scale) + 'px';
+    img.style.height = Math.round(wrapH * scale) + 'px';
+    // Use displayed size for drag positioning
+    wrapW = img.offsetWidth || Math.round(wrapW * scale);
+    wrapH = img.offsetHeight || Math.round(wrapH * scale);
     renderLabels();
   };
 }
@@ -424,7 +433,9 @@ function makeDraggable(el, fieldId) {
 async function saveConfig() {
   if (!ghToken) { toast('Inicia sesión primero en el panel de admin', true); return; }
   const path = `${actPath}/${actFolder}/diploma.config.json`;
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(fieldConfig, null, 2))));
+  // Save reference dimensions so QSL generator scales correctly
+  const configToSave = {...fieldConfig, _refW: wrapW, _refH: wrapH};
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(configToSave, null, 2))));
 
   // Get SHA if exists
   let sha;
