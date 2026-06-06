@@ -724,7 +724,10 @@ async function loadFolderItems(folder) {
 
 function pageFor(item) {
   const pages = {actividad:'actividad.html',post:'post.html',evento:'evento.html',galeria:'galeria.html'};
-  return `${pages[item._type]}?f=${encodeURIComponent(item._path)}&a=${encodeURIComponent(item._folder)}`;
+  // Derive type from path if _type missing
+  const type = item._type || (item._path||'').replace(/s$/,'');
+  const page = pages[type] || 'actividad.html';
+  return `${page}?f=${encodeURIComponent(item._path)}&a=${encodeURIComponent(item._folder)}`;
 }
 
 // ── GitHub upload ──────────────────────────────────────────────────────────
