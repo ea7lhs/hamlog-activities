@@ -174,16 +174,17 @@ const ghToken  = sessionStorage.getItem('gh_token') || '';
 document.getElementById('back-link').href = `admin.html`;
 
 // ── Field definitions ──────────────────────────────────────────────────────
+// size = % of diploma width (e.g. 6 means font-size: 6vw of the diploma)
 const FIELD_DEFS = [
-  { id:'call',      label:'Indicativo contacto', sample:'EA7XYZ',      default:{x:5,y:15,size:48,font:'Barlow Condensed',weight:'900',color:'#dde8ea',visible:true}},
-  { id:'date',      label:'Fecha',               sample:'15/05/2025',  default:{x:5,y:35,size:28,font:'Share Tech Mono',  weight:'400',color:'#dde8ea',visible:true}},
-  { id:'time',      label:'Hora UTC',             sample:'14:32',       default:{x:25,y:35,size:28,font:'Share Tech Mono', weight:'400',color:'#dde8ea',visible:true}},
-  { id:'band',      label:'Banda',                sample:'40m',         default:{x:45,y:35,size:28,font:'Share Tech Mono', weight:'400',color:'#00e5a0',visible:true}},
-  { id:'mode',      label:'Modo',                 sample:'SSB',         default:{x:60,y:35,size:28,font:'Share Tech Mono', weight:'400',color:'#00e5a0',visible:true}},
-  { id:'rst_s',     label:'RST Enviado',          sample:'59',          default:{x:5,y:50,size:22,font:'Share Tech Mono',  weight:'400',color:'#6b8a90',visible:false}},
-  { id:'rst_r',     label:'RST Recibido',         sample:'57',          default:{x:20,y:50,size:22,font:'Share Tech Mono', weight:'400',color:'#6b8a90',visible:false}},
-  { id:'station',   label:'Indicativo estación',  sample:'EA7LHS',      default:{x:60,y:80,size:36,font:'Barlow Condensed',weight:'700',color:'rgba(0,229,160,0.3)',visible:true}},
-  { id:'actname',   label:'Nombre actividad',     sample:'POTA EA5-001',default:{x:5,y:65,size:22,font:'Barlow Condensed',weight:'700',color:'#00b8d4',visible:true}},
+  { id:'call',      label:'Indicativo contacto', sample:'EA7XYZ',      default:{x:5,y:15,size:6,  font:'Barlow Condensed',weight:'900',color:'#dde8ea',visible:true}},
+  { id:'date',      label:'Fecha',               sample:'15/05/2025',  default:{x:5,y:35,size:3.5,font:'Share Tech Mono',  weight:'400',color:'#dde8ea',visible:true}},
+  { id:'time',      label:'Hora UTC',             sample:'14:32',       default:{x:25,y:35,size:3.5,font:'Share Tech Mono', weight:'400',color:'#dde8ea',visible:true}},
+  { id:'band',      label:'Banda',                sample:'40m',         default:{x:45,y:35,size:3.5,font:'Share Tech Mono', weight:'400',color:'#00e5a0',visible:true}},
+  { id:'mode',      label:'Modo',                 sample:'SSB',         default:{x:60,y:35,size:3.5,font:'Share Tech Mono', weight:'400',color:'#00e5a0',visible:true}},
+  { id:'rst_s',     label:'RST Enviado',          sample:'59',          default:{x:5,y:50,size:2.8,font:'Share Tech Mono',  weight:'400',color:'#6b8a90',visible:false}},
+  { id:'rst_r',     label:'RST Recibido',         sample:'57',          default:{x:20,y:50,size:2.8,font:'Share Tech Mono', weight:'400',color:'#6b8a90',visible:false}},
+  { id:'station',   label:'Indicativo estación',  sample:'EA7LHS',      default:{x:60,y:80,size:4.5,font:'Barlow Condensed',weight:'700',color:'rgba(0,229,160,0.3)',visible:true}},
+  { id:'actname',   label:'Nombre actividad',     sample:'POTA EA5-001',default:{x:5,y:65,size:2.8,font:'Barlow Condensed',weight:'700',color:'#00b8d4',visible:true}},
 ];
 
 const FONTS = ['Barlow Condensed','Share Tech Mono','Barlow','serif','monospace'];
@@ -280,7 +281,7 @@ function buildSidebar() {
       <div class="field-controls" style="${cfg.visible?'':'opacity:.4;pointer-events:none'}">
         <div>
           <label>Tamaño</label>
-          <input type="number" id="size-${f.id}" value="${cfg.size}" min="8" max="120" step="2">
+          <input type="number" id="size-${f.id}" value="${cfg.size}" min="0.5" max="20" step="0.1">
         </div>
         <div>
           <label>Color</label>
@@ -349,7 +350,8 @@ function renderLabels() {
 }
 
 function applyLabelStyle(lbl, cfg) {
-  lbl.style.fontSize   = cfg.size + 'px';
+  // size is % of wrap width → consistent across any screen size
+  lbl.style.fontSize   = (cfg.size / 100 * wrapW) + 'px';
   lbl.style.fontFamily = `'${cfg.font}', sans-serif`;
   lbl.style.fontWeight = cfg.weight || '400';
   lbl.style.color      = cfg.color;
@@ -433,9 +435,7 @@ function makeDraggable(el, fieldId) {
 async function saveConfig() {
   if (!ghToken) { toast('Inicia sesión primero en el panel de admin', true); return; }
   const path = `${actPath}/${actFolder}/diploma.config.json`;
-  // Save reference dimensions so QSL generator scales correctly
-  const configToSave = {...fieldConfig, _refW: wrapW, _refH: wrapH};
-  const content = btoa(unescape(encodeURIComponent(JSON.stringify(configToSave, null, 2))));
+  const content = btoa(unescape(encodeURIComponent(JSON.stringify(fieldConfig, null, 2))));
 
   // Get SHA if exists
   let sha;
@@ -508,11 +508,12 @@ function drawPreview(qso) {
     if (!cfg.visible) return;
     const x = cfg.x / 100 * W;
     const y = cfg.y / 100 * H;
-    ctx.font = `${cfg.weight||'400'} ${cfg.size * (W/800)}px '${cfg.font}', sans-serif`;
-    ctx.fillStyle = cfg.color;
-    ctx.shadowColor = 'rgba(0,0,0,.8)';
-    ctx.shadowBlur  = 4;
-    ctx.fillText(getValue(f.id), x, y + cfg.size * (W/800));
+    const fs = cfg.size / 100 * W;
+      ctx.font = `${cfg.weight||'400'} ${fs}px '${cfg.font}', sans-serif`;
+      ctx.fillStyle = cfg.color;
+      ctx.shadowColor = 'rgba(0,0,0,.8)';
+      ctx.shadowBlur  = 4;
+      ctx.fillText(getValue(f.id), x, y + fs);
     ctx.shadowBlur = 0;
   });
 }
