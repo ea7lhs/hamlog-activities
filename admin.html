@@ -3,227 +3,192 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Panel Admin — HamLog</title>
+<title>Admin — HamLog</title>
+<script>
+  // ── CONFIGURACIÓN ─────────────────────────────────────────────────────────
+  // Rellena estos dos valores al hacer el fork:
+  const GITHUB_USER   = 'ea7lhs';
+  const GITHUB_REPO   = 'hamlog-activities';
+  const GITHUB_BRANCH = 'main';
+  const CLERK_KEY     = '';  // tu Publishable Key de Clerk ej: pk_live_...
+  // ─────────────────────────────────────────────────────────────────────────
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0a0e0f; --surface: #111618; --surface2: #1a2022;
-    --border: #2a3538; --accent: #00e5a0; --accent2: #00b8d4;
-    --warn: #ff6b35; --danger: #e53935;
-    --text: #dde8ea; --text-dim: #6b8a90;
-    --mono: 'Share Tech Mono', monospace;
-    --sans: 'Barlow', sans-serif;
-    --condensed: 'Barlow Condensed', sans-serif;
+  :root{
+    --bg:#0a0e0f;--surface:#111618;--surface2:#1a2022;
+    --border:#2a3538;--accent:#00e5a0;--accent2:#00b8d4;
+    --warn:#ff9800;--danger:#e53935;--event:#a78bfa;--gallery:#f472b6;
+    --text:#dde8ea;--text-dim:#6b8a90;
+    --mono:'Share Tech Mono',monospace;--sans:'Barlow',sans-serif;--cond:'Barlow Condensed',sans-serif;
   }
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: var(--bg); color: var(--text); font-family: var(--sans); min-height: 100vh; }
-  body::before {
-    content: ''; position: fixed; inset: 0;
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+  body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
     background-image:
-      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,229,160,0.03) 40px),
-      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,229,160,0.03) 40px);
-    pointer-events: none; z-index: 0;
+      repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(0,229,160,.03) 40px),
+      repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(0,229,160,.03) 40px);
   }
 
-  header {
-    position: relative; z-index: 10;
-    padding: 1.5rem 2rem; border-bottom: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  header{
+    position:relative;z-index:10;padding:1.2rem 2rem;
+    border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;gap:1rem;
   }
-  .header-left { display: flex; align-items: center; gap: 1.5rem; }
-  .back-link {
-    font-family: var(--mono); font-size: 0.75rem; color: var(--text-dim);
-    text-decoration: none; letter-spacing: 0.1em; transition: color 0.2s;
-  }
-  .back-link:hover { color: var(--accent); }
-  .header-title {
-    font-family: var(--condensed); font-size: 1.4rem; font-weight: 700;
-  }
-  .header-title span { color: var(--accent); }
+  .header-left{display:flex;align-items:center;gap:1.2rem}
+  .back-link{font-family:var(--mono);font-size:.72rem;color:var(--text-dim);text-decoration:none;letter-spacing:.1em;transition:color .2s}
+  .back-link:hover{color:var(--accent)}
+  .header-title{font-family:var(--cond);font-size:1.3rem;font-weight:700}
+  .header-title span{color:var(--accent)}
+  #user-bar{display:none;align-items:center;gap:.8rem;font-family:var(--mono);font-size:.72rem;color:var(--text-dim)}
+  #user-bar img{width:28px;height:28px;border-radius:50%;border:1px solid var(--border)}
+  .btn-logout{background:none;border:1px solid var(--border);color:var(--text-dim);font-family:var(--mono);font-size:.68rem;padding:.3rem .7rem;cursor:pointer;letter-spacing:.08em;transition:all .2s}
+  .btn-logout:hover{border-color:var(--danger);color:var(--danger)}
 
-  #user-info {
-    display: flex; align-items: center; gap: 1rem;
-    font-family: var(--mono); font-size: 0.75rem; color: var(--text-dim);
-  }
-  #user-info img {
-    width: 32px; height: 32px; border-radius: 50%;
-    border: 1px solid var(--border);
-  }
-  .btn-logout {
-    background: none; border: 1px solid var(--border); color: var(--text-dim);
-    font-family: var(--mono); font-size: 0.7rem; padding: 0.35rem 0.7rem;
-    cursor: pointer; letter-spacing: 0.1em; transition: all 0.2s;
-  }
-  .btn-logout:hover { border-color: var(--danger); color: var(--danger); }
+  main{position:relative;z-index:1;max-width:860px;margin:0 auto;padding:2.5rem 2rem}
 
-  main {
-    position: relative; z-index: 1;
-    max-width: 900px; margin: 0 auto; padding: 3rem 2rem;
+  /* ── Login ── */
+  #login-screen{text-align:center;padding:5rem 2rem}
+  .login-icon{font-size:3.5rem;margin-bottom:1.2rem}
+  .login-title{font-family:var(--cond);font-size:2.2rem;font-weight:900;margin-bottom:.6rem}
+  .login-sub{font-family:var(--mono);font-size:.78rem;color:var(--text-dim);margin-bottom:2rem;line-height:1.8}
+  .btn-gh-login{
+    display:inline-flex;align-items:center;gap:.75rem;
+    background:var(--accent);color:var(--bg);border:none;
+    font-family:var(--cond);font-weight:700;font-size:1.05rem;
+    padding:.85rem 2.2rem;cursor:pointer;letter-spacing:.08em;transition:opacity .2s;
   }
-
-  /* ── Login screen ── */
-  #login-screen {
-    text-align: center; padding: 5rem 2rem;
-  }
-  .login-icon { font-size: 4rem; margin-bottom: 1.5rem; }
-  .login-title {
-    font-family: var(--condensed); font-size: 2.5rem; font-weight: 900; margin-bottom: 0.75rem;
-  }
-  .login-sub {
-    font-family: var(--mono); font-size: 0.8rem; color: var(--text-dim);
-    margin-bottom: 2.5rem; line-height: 1.8;
-  }
-  .btn-github {
-    display: inline-flex; align-items: center; gap: 0.75rem;
-    background: var(--accent); color: var(--bg);
-    border: none; font-family: var(--condensed); font-weight: 700;
-    font-size: 1.1rem; padding: 0.9rem 2.5rem; cursor: pointer;
-    letter-spacing: 0.08em; transition: opacity 0.2s; text-decoration: none;
-  }
-  .btn-github:hover { opacity: 0.85; }
-  .login-note {
-    font-family: var(--mono); font-size: 0.68rem; color: var(--text-dim);
-    margin-top: 1.5rem; line-height: 1.8;
-  }
+  .btn-gh-login:hover{opacity:.85}
+  .login-note{font-family:var(--mono);font-size:.65rem;color:var(--text-dim);margin-top:1.2rem;line-height:1.8}
 
   /* ── Panel ── */
-  #panel-screen { display: none; }
+  #panel-screen{display:none}
 
-  .section-label {
-    font-family: var(--mono); font-size: 0.65rem; color: var(--accent);
-    letter-spacing: 0.25em; text-transform: uppercase;
-    margin-bottom: 1.5rem;
-    display: flex; align-items: center; gap: 1rem;
+  .section-label{
+    font-family:var(--mono);font-size:.63rem;color:var(--accent);
+    letter-spacing:.25em;text-transform:uppercase;margin-bottom:1.2rem;
+    display:flex;align-items:center;gap:.8rem;
   }
-  .section-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .section-label::after{content:'';flex:1;height:1px;background:var(--border)}
 
-  .card {
-    background: var(--surface); border: 1px solid var(--border);
-    padding: 2rem; margin-bottom: 2.5rem;
+  /* Tab nav */
+  .tab-nav{display:flex;gap:0;margin-bottom:2rem;border:1px solid var(--border)}
+  .tab-btn{
+    flex:1;padding:.75rem;background:none;border:none;
+    font-family:var(--mono);font-size:.7rem;color:var(--text-dim);
+    cursor:pointer;letter-spacing:.1em;transition:all .2s;border-right:1px solid var(--border);
   }
+  .tab-btn:last-child{border-right:none}
+  .tab-btn:hover{color:var(--text);background:var(--surface2)}
+  .tab-btn.active{background:var(--surface2);color:var(--accent)}
+  .tab-content{display:none}
+  .tab-content.active{display:block}
 
-  .form-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem;
-    margin-bottom: 1.2rem;
+  /* Form */
+  .card{background:var(--surface);border:1px solid var(--border);padding:1.8rem;margin-bottom:2rem}
+  .fg{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+  .fg.full{grid-template-columns:1fr}
+  @media(max-width:600px){.fg{grid-template-columns:1fr}}
+  .field{display:flex;flex-direction:column;gap:.35rem}
+  .field label{font-family:var(--mono);font-size:.62rem;color:var(--accent);letter-spacing:.15em;text-transform:uppercase}
+  .field input,.field select,.field textarea{
+    background:var(--surface2);border:1px solid var(--border);
+    color:var(--text);font-family:var(--mono);font-size:.83rem;
+    padding:.65rem .9rem;outline:none;transition:border-color .2s;width:100%;
   }
-  .form-grid.full { grid-template-columns: 1fr; }
-  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+  .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+  .field input::placeholder,.field textarea::placeholder{color:var(--text-dim)}
+  .field select option{background:var(--surface2)}
+  .field textarea{resize:vertical;min-height:80px;font-family:var(--sans);font-size:.88rem}
 
-  .field { display: flex; flex-direction: column; gap: 0.4rem; }
-  .field label {
-    font-family: var(--mono); font-size: 0.65rem; color: var(--accent);
-    letter-spacing: 0.15em; text-transform: uppercase;
+  /* WYSIWYG toolbar */
+  .editor-wrap{border:1px solid var(--border)}
+  .editor-toolbar{
+    display:flex;gap:2px;padding:.4rem;background:var(--surface2);
+    border-bottom:1px solid var(--border);flex-wrap:wrap;
   }
-  .field input, .field select, .field textarea {
-    background: var(--surface2); border: 1px solid var(--border);
-    color: var(--text); font-family: var(--mono); font-size: 0.85rem;
-    padding: 0.7rem 0.9rem; outline: none; transition: border-color 0.2s;
-    width: 100%;
+  .toolbar-btn{
+    background:none;border:1px solid transparent;color:var(--text-dim);
+    font-size:.85rem;padding:.2rem .5rem;cursor:pointer;transition:all .15s;
+    font-family:var(--mono);
   }
-  .field input:focus, .field select:focus, .field textarea:focus {
-    border-color: var(--accent);
+  .toolbar-btn:hover{background:var(--border);color:var(--text)}
+  #editor{
+    min-height:200px;padding:1rem;outline:none;
+    font-family:var(--sans);font-size:.9rem;line-height:1.7;
+    color:var(--text);background:var(--surface);
   }
-  .field input::placeholder, .field textarea::placeholder { color: var(--text-dim); }
-  .field select option { background: var(--surface2); }
-  .field textarea { resize: vertical; min-height: 80px; }
+  #editor h1,#editor h2,#editor h3{font-family:var(--cond);font-weight:700;margin:.5rem 0}
+  #editor a{color:var(--accent2)}
+  #editor blockquote{border-left:3px solid var(--accent);padding-left:1rem;color:var(--text-dim);margin:.5rem 0}
+  #editor ul,#editor ol{padding-left:1.5rem;margin:.5rem 0}
 
-  /* Drop zone */
-  .drop-zone {
-    border: 2px dashed var(--border); padding: 2rem; text-align: center;
-    cursor: pointer; transition: all 0.2s; position: relative;
+  /* Drop zones */
+  .drop-zone{
+    border:2px dashed var(--border);padding:1.5rem;text-align:center;
+    cursor:pointer;transition:all .2s;position:relative;
   }
-  .drop-zone:hover, .drop-zone.drag-over {
-    border-color: var(--accent); background: rgba(0,229,160,0.03);
-  }
-  .drop-zone input[type="file"] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
-  }
-  .drop-zone-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
-  .drop-zone-label {
-    font-family: var(--mono); font-size: 0.8rem; color: var(--text-dim);
-  }
-  .drop-zone-label strong { color: var(--accent); }
-  .drop-zone-filename {
-    font-family: var(--mono); font-size: 0.8rem; color: var(--accent);
-    margin-top: 0.5rem;
-  }
+  .drop-zone:hover,.drop-zone.drag-over{border-color:var(--accent);background:rgba(0,229,160,.02)}
+  .drop-zone input[type="file"]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+  .dz-icon{font-size:2rem;margin-bottom:.4rem}
+  .dz-label{font-family:var(--mono);font-size:.75rem;color:var(--text-dim)}
+  .dz-label strong{color:var(--accent)}
+  .dz-filename{font-family:var(--mono);font-size:.75rem;color:var(--accent);margin-top:.4rem}
+  .dz-preview{max-width:180px;max-height:110px;margin:.6rem auto 0;display:block;border:1px solid var(--border);object-fit:cover}
 
-  .drop-zone-img-preview {
-    max-width: 200px; max-height: 120px; margin: 0.75rem auto 0;
-    display: block; border: 1px solid var(--border);
-    object-fit: cover;
-  }
-
-  .btn-primary {
-    width: 100%; padding: 1rem;
-    background: var(--accent); color: var(--bg);
-    border: none; font-family: var(--condensed); font-weight: 700;
-    font-size: 1.1rem; letter-spacing: 0.1em; cursor: pointer;
-    transition: opacity 0.2s; margin-top: 1rem;
-  }
-  .btn-primary:hover { opacity: 0.85; }
-  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
-
-  /* Existing activities */
-  .act-list { display: flex; flex-direction: column; gap: 0.75rem; }
-  .act-item {
-    background: var(--surface2); border: 1px solid var(--border);
-    padding: 1rem 1.2rem;
-    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-    flex-wrap: wrap;
-  }
-  .act-item-info {}
-  .act-item-name {
-    font-family: var(--condensed); font-size: 1.1rem; font-weight: 700;
-  }
-  .act-item-meta {
-    font-family: var(--mono); font-size: 0.68rem; color: var(--text-dim); margin-top: 0.2rem;
-  }
-  .act-item-actions { display: flex; gap: 0.5rem; }
-  .btn-sm {
-    background: none; border: 1px solid var(--border); color: var(--text-dim);
-    font-family: var(--mono); font-size: 0.68rem; padding: 0.3rem 0.7rem;
-    cursor: pointer; letter-spacing: 0.08em; transition: all 0.2s; text-decoration: none;
-    display: inline-block;
-  }
-  .btn-sm:hover { border-color: var(--accent2); color: var(--accent2); }
-  .btn-sm.danger:hover { border-color: var(--danger); color: var(--danger); }
-
-  /* Upload log to existing */
-  .upload-log-area {
-    background: var(--surface2); border: 1px solid var(--border);
-    padding: 1.2rem; margin-top: 0.5rem;
-  }
-  .upload-log-area .field label { font-size: 0.6rem; }
-
-  /* Toast */
-  #toast {
-    position: fixed; bottom: 2rem; right: 2rem;
-    background: var(--surface); border: 1px solid var(--accent);
-    color: var(--accent); font-family: var(--mono); font-size: 0.8rem;
-    padding: 0.9rem 1.5rem; z-index: 999;
-    transform: translateY(20px); opacity: 0; transition: all 0.3s;
-    pointer-events: none; max-width: 340px;
-  }
-  #toast.show { transform: translateY(0); opacity: 1; }
-  #toast.error { border-color: var(--danger); color: var(--danger); }
+  /* Multi-photo drop */
+  .photos-grid{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:.75rem}
+  .photo-thumb{width:80px;height:60px;object-fit:cover;border:1px solid var(--border);position:relative}
 
   /* Progress */
-  .progress-wrap {
-    background: var(--border); height: 3px; margin-top: 0.75rem;
-    display: none;
-  }
-  .progress-bar {
-    height: 100%; background: var(--accent);
-    transition: width 0.3s; width: 0%;
-  }
+  .progress-wrap{background:var(--border);height:3px;margin-top:.75rem;display:none}
+  .progress-bar{height:100%;background:var(--accent);transition:width .3s;width:0%}
 
-  .empty-list {
-    font-family: var(--mono); font-size: 0.78rem; color: var(--text-dim);
-    text-align: center; padding: 2rem;
-    border: 1px dashed var(--border);
+  /* Buttons */
+  .btn-primary{
+    width:100%;padding:.9rem;background:var(--accent);color:var(--bg);
+    border:none;font-family:var(--cond);font-weight:700;font-size:1rem;
+    letter-spacing:.1em;cursor:pointer;transition:opacity .2s;margin-top:.8rem;
   }
+  .btn-primary:hover{opacity:.85}
+  .btn-primary:disabled{opacity:.4;cursor:not-allowed}
+
+  /* Existing content list */
+  .content-list{display:flex;flex-direction:column;gap:.6rem}
+  .content-item{
+    background:var(--surface2);border:1px solid var(--border);
+    padding:.9rem 1.1rem;display:flex;align-items:center;justify-content:space-between;gap:.8rem;flex-wrap:wrap;
+  }
+  .ci-name{font-family:var(--cond);font-size:1rem;font-weight:700}
+  .ci-meta{font-family:var(--mono);font-size:.63rem;color:var(--text-dim);margin-top:.2rem}
+  .ci-badge{
+    font-family:var(--mono);font-size:.55rem;letter-spacing:.15em;
+    padding:.15rem .5rem;margin-right:.4rem;
+  }
+  .badge-log{background:rgba(0,229,160,.1);color:var(--accent);border:1px solid rgba(0,229,160,.2)}
+  .badge-post{background:rgba(0,184,212,.1);color:var(--accent2);border:1px solid rgba(0,184,212,.2)}
+  .badge-evento{background:rgba(167,139,250,.1);color:var(--event);border:1px solid rgba(167,139,250,.2)}
+  .badge-galeria{background:rgba(244,114,182,.1);color:var(--gallery);border:1px solid rgba(244,114,182,.2)}
+  .ci-actions{display:flex;gap:.4rem}
+  .btn-sm{
+    background:none;border:1px solid var(--border);color:var(--text-dim);
+    font-family:var(--mono);font-size:.63rem;padding:.25rem .6rem;cursor:pointer;
+    letter-spacing:.08em;transition:all .2s;text-decoration:none;display:inline-block;
+  }
+  .btn-sm:hover{border-color:var(--accent2);color:var(--accent2)}
+  .empty-list{font-family:var(--mono);font-size:.75rem;color:var(--text-dim);text-align:center;padding:2rem;border:1px dashed var(--border)}
+
+  /* Toast */
+  #toast{
+    position:fixed;bottom:1.5rem;right:1.5rem;
+    background:var(--surface);border:1px solid var(--accent);color:var(--accent);
+    font-family:var(--mono);font-size:.78rem;padding:.8rem 1.3rem;z-index:999;
+    transform:translateY(16px);opacity:0;transition:all .3s;pointer-events:none;max-width:320px;
+  }
+  #toast.show{transform:translateY(0);opacity:1}
+  #toast.error{border-color:var(--danger);color:var(--danger)}
 </style>
 </head>
 <body>
@@ -233,7 +198,7 @@
     <a href="index.html" class="back-link">← INICIO</a>
     <div class="header-title">Ham<span>Log</span> · Admin</div>
   </div>
-  <div id="user-info" style="display:none"></div>
+  <div id="user-bar"></div>
 </header>
 
 <main>
@@ -242,506 +207,596 @@
     <div class="login-icon">📡</div>
     <div class="login-title">Panel de Administración</div>
     <div class="login-sub">
-      Accede con tu cuenta de GitHub para gestionar<br>
-      las actividades y logs del sitio.
+      Accede con tu cuenta de GitHub para gestionar<br>el contenido del sitio.
     </div>
-    <a href="#" class="btn-github" id="btn-login">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+    <button class="btn-gh-login" id="btn-login">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
       </svg>
       Entrar con GitHub
-    </a>
+    </button>
     <div class="login-note">
       Solo pueden acceder colaboradores del repositorio.<br>
-      Si no puedes entrar, pide al administrador que te añada.
+      La sesión se mantiene en este navegador.
     </div>
   </div>
 
   <!-- PANEL -->
   <div id="panel-screen">
-
-    <div class="section-label">Nueva actividad</div>
-    <div class="card">
-      <div class="form-grid">
-        <div class="field">
-          <label>Nombre de la actividad *</label>
-          <input type="text" id="act-nombre" placeholder="POTA EA5-001 · Mayo 2025">
-        </div>
-        <div class="field">
-          <label>Tipo</label>
-          <select id="act-tipo">
-            <option value="ACTIVIDAD">Actividad</option>
-            <option value="POTA">POTA</option>
-            <option value="SOTA">SOTA</option>
-            <option value="CONCURSO">Concurso</option>
-            <option value="EXPEDICIÓN">Expedición</option>
-            <option value="EVENTO">Evento</option>
-          </select>
-        </div>
-        <div class="field">
-          <label>Fecha *</label>
-          <input type="date" id="act-fecha">
-        </div>
-        <div class="field">
-          <label>Indicativo de la estación</label>
-          <input type="text" id="act-indicativo" placeholder="EA7LHS">
-        </div>
-      </div>
-      <div class="form-grid full">
-        <div class="field">
-          <label>Descripción (opcional)</label>
-          <textarea id="act-desc" placeholder="Breve descripción de la actividad..."></textarea>
-        </div>
-      </div>
-
-      <div class="form-grid">
-        <div class="field">
-          <label>Log ADIF (.adi)</label>
-          <div class="drop-zone" id="drop-adi">
-            <input type="file" id="file-adi" accept=".adi,.adif">
-            <div class="drop-zone-icon">📋</div>
-            <div class="drop-zone-label">Arrastra el log <strong>.adi</strong> aquí<br>o haz clic para seleccionar</div>
-            <div class="drop-zone-filename" id="adi-filename"></div>
-          </div>
-        </div>
-        <div class="field">
-          <label>Foto de portada</label>
-          <div class="drop-zone" id="drop-foto">
-            <input type="file" id="file-foto" accept="image/*">
-            <div class="drop-zone-icon">📷</div>
-            <div class="drop-zone-label">Arrastra una <strong>foto</strong> aquí<br>o haz clic para seleccionar</div>
-            <div class="drop-zone-filename" id="foto-filename"></div>
-            <img id="foto-preview" class="drop-zone-img-preview" style="display:none">
-          </div>
-        </div>
-      </div>
-
-      <div class="field" style="margin-top:0.5rem">
-        <label>Imagen de diploma / fondo QSL (opcional)</label>
-        <div class="drop-zone" id="drop-diploma">
-          <input type="file" id="file-diploma" accept="image/*">
-          <div class="drop-zone-icon">🏅</div>
-          <div class="drop-zone-label">Arrastra la imagen base del <strong>diploma</strong> aquí<br>o haz clic para seleccionar</div>
-          <div class="drop-zone-filename" id="diploma-filename"></div>
-        </div>
-      </div>
-
-      <div class="progress-wrap" id="progress-wrap">
-        <div class="progress-bar" id="progress-bar"></div>
-      </div>
-
-      <button class="btn-primary" id="btn-publish">📡 PUBLICAR ACTIVIDAD</button>
+    <div class="tab-nav">
+      <button class="tab-btn active" data-tab="nueva">＋ NUEVA PUBLICACIÓN</button>
+      <button class="tab-btn" data-tab="lista">📋 PUBLICACIONES</button>
     </div>
 
-    <div class="section-label">Actividades existentes</div>
-    <div id="act-list-wrap">
-      <div class="act-list" id="act-list">
-        <div class="empty-list">Cargando actividades...</div>
+    <!-- TAB: Nueva publicación -->
+    <div class="tab-content active" id="tab-nueva">
+      <div class="section-label">Tipo de publicación</div>
+      <div class="card" style="padding:1rem">
+        <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+          <button class="tab-btn active" id="type-log"     onclick="setType('log')"    >📡 LOG / ACTIVIDAD</button>
+          <button class="tab-btn"        id="type-post"    onclick="setType('post')"   >📝 NOTICIA / BLOG</button>
+          <button class="tab-btn"        id="type-evento"  onclick="setType('evento')" >📅 EVENTO</button>
+          <button class="tab-btn"        id="type-galeria" onclick="setType('galeria')">🖼️ GALERÍA</button>
+        </div>
+      </div>
+
+      <!-- Campos comunes -->
+      <div class="card">
+        <div class="fg">
+          <div class="field">
+            <label>Título / Nombre *</label>
+            <input type="text" id="f-titulo" placeholder="Nombre de la publicación">
+          </div>
+          <div class="field">
+            <label>Fecha *</label>
+            <input type="date" id="f-fecha">
+          </div>
+        </div>
+
+        <!-- Campos específicos por tipo -->
+        <div id="fields-log">
+          <div class="fg">
+            <div class="field">
+              <label>Tipo de actividad</label>
+              <select id="f-tipo">
+                <option value="ACTIVIDAD">Actividad</option>
+                <option value="POTA">POTA</option>
+                <option value="SOTA">SOTA</option>
+                <option value="CONCURSO">Concurso</option>
+                <option value="EXPEDICIÓN">Expedición</option>
+                <option value="EVENTO">Evento especial</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Indicativo de la estación</label>
+              <input type="text" id="f-indicativo" placeholder="EA7LHS">
+            </div>
+          </div>
+        </div>
+
+        <div id="fields-evento" style="display:none">
+          <div class="fg">
+            <div class="field">
+              <label>Fecha fin (si es varios días)</label>
+              <input type="date" id="f-fecha-fin">
+            </div>
+            <div class="field">
+              <label>Lugar</label>
+              <input type="text" id="f-lugar" placeholder="Localización del evento">
+            </div>
+          </div>
+        </div>
+
+        <div class="fg full" style="margin-top:.2rem">
+          <div class="field">
+            <label>Descripción breve</label>
+            <input type="text" id="f-desc" placeholder="Resumen corto (aparece en la tarjeta)">
+          </div>
+        </div>
+
+        <!-- Cuerpo de texto largo (post / evento / galería) -->
+        <div id="fields-body" style="display:none;margin-top:.8rem">
+          <div class="field">
+            <label>Contenido</label>
+            <div class="editor-wrap">
+              <div class="editor-toolbar">
+                <button class="toolbar-btn" onclick="fmt('bold')" title="Negrita"><b>N</b></button>
+                <button class="toolbar-btn" onclick="fmt('italic')" title="Cursiva"><i>K</i></button>
+                <button class="toolbar-btn" onclick="fmtHead(2)" title="Título">H2</button>
+                <button class="toolbar-btn" onclick="fmtHead(3)" title="Subtítulo">H3</button>
+                <button class="toolbar-btn" onclick="fmt('insertUnorderedList')" title="Lista">• Lista</button>
+                <button class="toolbar-btn" onclick="fmt('insertOrderedList')" title="Lista numerada">1. Lista</button>
+                <button class="toolbar-btn" onclick="fmtLink()" title="Enlace">🔗</button>
+                <button class="toolbar-btn" onclick="fmt('formatBlock','blockquote')" title="Cita">❝</button>
+              </div>
+              <div id="editor" contenteditable="true" spellcheck="true">
+                <p>Escribe aquí el contenido...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Foto de portada -->
+        <div style="margin-top:.8rem">
+          <div class="field">
+            <label>Foto de portada</label>
+            <div class="drop-zone" id="dz-foto">
+              <input type="file" id="file-foto" accept="image/*">
+              <div class="dz-icon">📷</div>
+              <div class="dz-label">Arrastra una <strong>foto</strong> o haz clic</div>
+              <div class="dz-filename" id="foto-name"></div>
+              <img id="foto-preview" class="dz-preview" style="display:none">
+            </div>
+          </div>
+        </div>
+
+        <!-- Galería: múltiples fotos -->
+        <div id="fields-galeria-fotos" style="display:none;margin-top:.8rem">
+          <div class="field">
+            <label>Fotos de la galería</label>
+            <div class="drop-zone" id="dz-galeria" style="min-height:80px">
+              <input type="file" id="file-galeria" accept="image/*" multiple>
+              <div class="dz-icon">🖼️</div>
+              <div class="dz-label">Arrastra las <strong>fotos</strong> de la galería (puedes seleccionar varias)</div>
+            </div>
+            <div class="photos-grid" id="galeria-preview"></div>
+          </div>
+        </div>
+
+        <!-- Log ADIF -->
+        <div id="fields-adi" style="margin-top:.8rem">
+          <div class="field">
+            <label>Log ADIF (.adi)</label>
+            <div class="drop-zone" id="dz-adi">
+              <input type="file" id="file-adi" accept=".adi,.adif">
+              <div class="dz-icon">📋</div>
+              <div class="dz-label">Arrastra el archivo <strong>.adi</strong> o haz clic</div>
+              <div class="dz-filename" id="adi-name"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Diploma -->
+        <div id="fields-diploma" style="margin-top:.8rem">
+          <div class="field">
+            <label>Imagen diploma / fondo QSL (opcional)</label>
+            <div class="drop-zone" id="dz-diploma">
+              <input type="file" id="file-diploma" accept="image/*">
+              <div class="dz-icon">🏅</div>
+              <div class="dz-label">Arrastra la imagen del <strong>diploma</strong> o haz clic</div>
+              <div class="dz-filename" id="diploma-name"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="progress-wrap" id="progress-wrap">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <button class="btn-primary" id="btn-publish">📡 PUBLICAR</button>
       </div>
     </div>
 
+    <!-- TAB: Lista -->
+    <div class="tab-content" id="tab-lista">
+      <div id="content-list-wrap">
+        <div class="content-list" id="content-list">
+          <div class="empty-list">Cargando...</div>
+        </div>
+      </div>
+    </div>
   </div>
 </main>
 
 <div id="toast"></div>
 
 <script>
-// ── CONFIG ────────────────────────────────────────────────────────────────────
-const GITHUB_USER   = 'ea7lhs';        // ej: 'ea7lhs'
-const GITHUB_REPO   = 'hamlog-activities';        // ej: 'mi-hamlog'
-const GITHUB_BRANCH = 'main';
-// OAuth App (se crea una vez en github.com/settings/developers)
-const OAUTH_CLIENT_ID = '';      // ej: 'Ov23li...'
-// IMPORTANTE: la URL de callback debe ser la URL de este admin.html en GitHub Pages
-// ─────────────────────────────────────────────────────────────────────────────
-
+// ── GitHub API ─────────────────────────────────────────────────────────────
 const API = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents`;
+const RAW = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}`;
+let ghToken = '';
 
-// ── OAuth ─────────────────────────────────────────────────────────────────────
-let ghToken = sessionStorage.getItem('gh_token') || '';
-
-function startOAuth() {
-  const state = Math.random().toString(36).slice(2);
-  sessionStorage.setItem('oauth_state', state);
-  const url = `https://github.com/login/oauth/authorize?client_id=${OAUTH_CLIENT_ID}&scope=repo&state=${state}`;
-  location.href = url;
-}
-
-async function handleOAuthCallback() {
-  const params = new URLSearchParams(location.search);
-  const code = params.get('code');
-  const state = params.get('state');
-  if (!code) return false;
-  if (state !== sessionStorage.getItem('oauth_state')) {
-    toast('Error de seguridad en OAuth', true); return false;
-  }
-
-  // Necesitamos un proxy para intercambiar el code por el token
-  // (GitHub no permite hacerlo desde el navegador directamente)
-  // Usamos el proxy público de Gatekeeper o similar.
-  // Para producción: despliega tu propio worker en Cloudflare / Vercel.
-  // Aquí usamos github-oauth-handler de Netlify como ejemplo:
-  try {
-    const r = await fetch(`https://github-oauth-proxy.vercel.app/api/callback?code=${code}`);
-    if (!r.ok) throw new Error();
-    const data = await r.json();
-    if (!data.token) throw new Error();
-    ghToken = data.token;
-    sessionStorage.setItem('gh_token', ghToken);
-    // Limpiar URL
-    history.replaceState({}, '', location.pathname);
-    return true;
-  } catch {
-    // Fallback: pedir token manualmente si el proxy falla
-    return false;
+// ── Clerk Auth ─────────────────────────────────────────────────────────────
+// Cargamos Clerk dinámicamente solo si hay CLERK_KEY configurada
+async function initAuth() {
+  if (CLERK_KEY) {
+    await loadClerk();
+  } else {
+    // Fallback: token manual (para desarrollo / sin Clerk configurado)
+    fallbackTokenLogin();
   }
 }
 
-async function verifyToken(token) {
-  const r = await fetch('https://api.github.com/user', {
-    headers: { Authorization: `token ${token}`, Accept: 'application/vnd.github.v3+json' }
+async function loadClerk() {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
+    script.setAttribute('data-clerk-publishable-key', CLERK_KEY);
+    script.onload = async () => {
+      await window.Clerk.load();
+      const user = window.Clerk.user;
+      if (user) {
+        // Obtener token de GitHub del OAuth de Clerk
+        try {
+          const tokenRes = await window.Clerk.user.getUserOauthAccessToken('oauth_github');
+          if (tokenRes && tokenRes[0]?.token) {
+            ghToken = tokenRes[0].token;
+            showPanel(user.primaryEmailAddress?.emailAddress || user.username, user.imageUrl);
+          } else {
+            // Tiene sesión de Clerk pero no token de GitHub — pedir login con GitHub
+            showClerkLogin();
+          }
+        } catch { showClerkLogin(); }
+      } else {
+        showClerkLogin();
+      }
+      resolve();
+    };
+    document.head.appendChild(script);
   });
-  if (!r.ok) return null;
-  return r.json();
 }
 
-// ── Init ──────────────────────────────────────────────────────────────────────
-async function init() {
-  document.getElementById('btn-login').addEventListener('click', e => {
-    e.preventDefault();
-    if (OAUTH_CLIENT_ID) {
-      startOAuth();
-    } else {
-      // Fallback manual token (para cuando no hay OAuth App configurada)
-      const t = prompt('Pega tu token de acceso personal de GitHub:');
-      if (t) { ghToken = t.trim(); sessionStorage.setItem('gh_token', ghToken); checkAuth(); }
-    }
-  });
-
-  // Comprobar si venimos del callback OAuth
-  if (location.search.includes('code=')) {
-    const ok = await handleOAuthCallback();
-    if (!ok) {
-      toast('No se pudo completar el login. Prueba el token manual.', true);
-    }
-  }
-
-  await checkAuth();
-  setupDropZones();
-  setupForm();
-}
-
-async function checkAuth() {
-  if (!ghToken) return;
-  const user = await verifyToken(ghToken);
-  if (!user) {
-    ghToken = '';
-    sessionStorage.removeItem('gh_token');
-    toast('Token inválido o expirado', true);
-    return;
-  }
-  showPanel(user);
-}
-
-function showPanel(user) {
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('panel-screen').style.display = 'block';
-
-  const ui = document.getElementById('user-info');
-  ui.style.display = 'flex';
-  ui.innerHTML = `
-    <img src="${user.avatar_url}" alt="">
-    <span>${user.login}</span>
-    <button class="btn-logout" onclick="logout()">Cerrar sesión</button>
-  `;
-  loadActivities();
-}
-
-function logout() {
-  ghToken = '';
-  sessionStorage.removeItem('gh_token');
-  location.reload();
-}
-
-// ── Load existing activities ──────────────────────────────────────────────────
-async function loadActivities() {
-  const list = document.getElementById('act-list');
-  try {
-    const r = await fetch(`${API}/actividades`, {
-      headers: { Authorization: `token ${ghToken}`, Accept: 'application/vnd.github.v3+json' }
-    });
-    if (!r.ok) {
-      list.innerHTML = '<div class="empty-list">No hay actividades todavía.</div>';
-      return;
-    }
-    const items = await r.json();
-    const folders = items.filter(i => i.type === 'dir');
-    if (!folders.length) {
-      list.innerHTML = '<div class="empty-list">No hay actividades todavía.</div>';
-      return;
-    }
-    const infos = await Promise.all(folders.map(async f => {
-      try {
-        const r2 = await fetch(`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/actividades/${f.name}/info.json`);
-        if (r2.ok) { const d = await r2.json(); d._folder = f.name; return d; }
-      } catch {}
-      return { _folder: f.name, nombre: f.name };
-    }));
-    infos.sort((a,b) => new Date(b.fecha||0) - new Date(a.fecha||0));
-    list.innerHTML = '';
-    infos.forEach(info => {
-      const div = document.createElement('div');
-      div.className = 'act-item';
-      div.innerHTML = `
-        <div class="act-item-info">
-          <div class="act-item-name">${info.nombre || info._folder}</div>
-          <div class="act-item-meta">${info.fecha || ''} ${info.tipo ? '· ' + info.tipo : ''} · ${info._folder}</div>
-        </div>
-        <div class="act-item-actions">
-          <a href="actividad.html?a=${encodeURIComponent(info._folder)}" class="btn-sm" target="_blank">VER →</a>
-          <button class="btn-sm" onclick="openUpdateLog('${info._folder}')">ACTUALIZAR LOG</button>
-        </div>
-      `;
-      list.appendChild(div);
-
-      // Upload log area (hidden by default)
-      const upDiv = document.createElement('div');
-      upDiv.id = `upload-${info._folder}`;
-      upDiv.className = 'upload-log-area';
-      upDiv.style.display = 'none';
-      upDiv.innerHTML = `
-        <div class="field">
-          <label>Nuevo log .adi para "${info.nombre || info._folder}"</label>
-          <div class="drop-zone" id="drop-update-${info._folder}" style="padding:1rem">
-            <input type="file" id="file-update-${info._folder}" accept=".adi,.adif">
-            <div class="drop-zone-label">Arrastra el nuevo <strong>.adi</strong> aquí</div>
-            <div class="drop-zone-filename" id="update-filename-${info._folder}"></div>
-          </div>
-        </div>
-        <button class="btn-sm" style="margin-top:0.75rem;width:100%" onclick="uploadUpdatedLog('${info._folder}')">SUBIR LOG</button>
-      `;
-      list.appendChild(upDiv);
-
-      // Drop zone for update
-      const inp = upDiv.querySelector(`#file-update-${info._folder}`);
-      inp.addEventListener('change', () => {
-        document.getElementById(`update-filename-${info._folder}`).textContent = inp.files[0]?.name || '';
-      });
-    });
-  } catch(e) {
-    list.innerHTML = `<div class="empty-list">Error cargando actividades.</div>`;
-  }
-}
-
-function openUpdateLog(folder) {
-  const el = document.getElementById(`upload-${folder}`);
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-
-async function uploadUpdatedLog(folder) {
-  const inp = document.getElementById(`file-update-${folder}`);
-  if (!inp.files[0]) { toast('Selecciona un archivo .adi', true); return; }
-  const content = await toBase64(inp.files[0]);
-  await githubUpload(
-    `actividades/${folder}/log.adi`,
-    content,
-    `Actualiza log: ${folder}`
-  );
-}
-
-// ── Form & Drop Zones ─────────────────────────────────────────────────────────
-let files = { adi: null, foto: null, diploma: null };
-
-function setupDropZones() {
-  setupDrop('drop-adi',    'file-adi',    'adi',     'adi-filename');
-  setupDrop('drop-foto',   'file-foto',   'foto',    'foto-filename', 'foto-preview');
-  setupDrop('drop-diploma','file-diploma','diploma', 'diploma-filename');
-}
-
-function setupDrop(zoneId, inputId, key, labelId, previewId) {
-  const zone  = document.getElementById(zoneId);
-  const input = document.getElementById(inputId);
-  input.addEventListener('change', () => {
-    files[key] = input.files[0] || null;
-    document.getElementById(labelId).textContent = files[key]?.name || '';
-    if (previewId && files[key]) {
-      const pr = document.getElementById(previewId);
-      pr.src = URL.createObjectURL(files[key]);
-      pr.style.display = 'block';
-    }
-  });
-  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-  zone.addEventListener('drop', e => {
-    e.preventDefault(); zone.classList.remove('drag-over');
-    const f = e.dataTransfer.files[0];
-    if (f) {
-      files[key] = f;
-      document.getElementById(labelId).textContent = f.name;
-      if (previewId) {
-        const pr = document.getElementById(previewId);
-        pr.src = URL.createObjectURL(f);
-        pr.style.display = 'block';
+function showClerkLogin() {
+  document.getElementById('btn-login').onclick = () => {
+    window.Clerk.openSignIn({ appearance: { variables: { colorPrimary: '#00e5a0' } } });
+  };
+  // Escuchar cuando el usuario completa el login
+  window.Clerk.addListener(async ({ user }) => {
+    if (user) {
+      const tokenRes = await window.Clerk.user.getUserOauthAccessToken('oauth_github');
+      if (tokenRes && tokenRes[0]?.token) {
+        ghToken = tokenRes[0].token;
+        showPanel(user.primaryEmailAddress?.emailAddress || user.username, user.imageUrl);
+      } else {
+        toast('Necesitas conectar tu cuenta de GitHub en Clerk', true);
       }
     }
   });
 }
 
-function setupForm() {
-  document.getElementById('btn-publish').addEventListener('click', publish);
+function fallbackTokenLogin() {
+  // Sin Clerk: pedir token manualmente (modo desarrollo)
+  const saved = sessionStorage.getItem('gh_token');
+  if (saved) { ghToken = saved; showPanel('Admin', null); return; }
+
+  document.getElementById('btn-login').onclick = () => {
+    const t = prompt('Token de GitHub (modo desarrollo — configura Clerk para producción):');
+    if (t) {
+      ghToken = t.trim();
+      sessionStorage.setItem('gh_token', ghToken);
+      showPanel('Admin', null);
+    }
+  };
 }
 
-// ── Publish ───────────────────────────────────────────────────────────────────
+function showPanel(name, avatar) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('panel-screen').style.display = 'block';
+  const bar = document.getElementById('user-bar');
+  bar.style.display = 'flex';
+  bar.innerHTML = `
+    ${avatar ? `<img src="${avatar}" alt="">` : ''}
+    <span>${name}</span>
+    <button class="btn-logout" onclick="logout()">Salir</button>
+  `;
+  loadContentList();
+}
+
+function logout() {
+  ghToken = '';
+  sessionStorage.removeItem('gh_token');
+  if (window.Clerk) window.Clerk.signOut();
+  location.reload();
+}
+
+// ── Tabs ───────────────────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn[data-tab]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'lista') loadContentList();
+  });
+});
+
+// ── Content type selector ──────────────────────────────────────────────────
+let currentType = 'log';
+function setType(type) {
+  currentType = type;
+  ['log','post','evento','galeria'].forEach(t => {
+    document.getElementById('type-' + t).classList.toggle('active', t === type);
+  });
+  // Show/hide fields
+  document.getElementById('fields-log').style.display        = type === 'log'     ? '' : 'none';
+  document.getElementById('fields-adi').style.display        = type === 'log'     ? '' : 'none';
+  document.getElementById('fields-diploma').style.display    = type === 'log'     ? '' : 'none';
+  document.getElementById('fields-evento').style.display     = type === 'evento'  ? '' : 'none';
+  document.getElementById('fields-body').style.display       = ['post','evento','galeria'].includes(type) ? '' : 'none';
+  document.getElementById('fields-galeria-fotos').style.display = type === 'galeria' ? '' : 'none';
+}
+
+// ── WYSIWYG ────────────────────────────────────────────────────────────────
+function fmt(cmd, val) { document.execCommand(cmd, false, val||null); }
+function fmtHead(n) { document.execCommand('formatBlock', false, 'h' + n); }
+function fmtLink() {
+  const url = prompt('URL del enlace:');
+  if (url) document.execCommand('createLink', false, url);
+}
+
+// Editor → Markdown (simple)
+function editorToMarkdown() {
+  const html = document.getElementById('editor').innerHTML;
+  return htmlToMarkdown(html);
+}
+
+function htmlToMarkdown(html) {
+  return html
+    .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '## $1\n\n')
+    .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '### $1\n\n')
+    .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '**$1**')
+    .replace(/<b[^>]*>(.*?)<\/b>/gi, '**$1**')
+    .replace(/<em[^>]*>(.*?)<\/em>/gi, '*$1*')
+    .replace(/<i[^>]*>(.*?)<\/i>/gi, '*$1*')
+    .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '[$2]($1)')
+    .replace(/<blockquote[^>]*>(.*?)<\/blockquote>/gis, '> $1\n\n')
+    .replace(/<li[^>]*>(.*?)<\/li>/gi, '- $1\n')
+    .replace(/<ul[^>]*>|<\/ul>/gi, '\n')
+    .replace(/<ol[^>]*>|<\/ol>/gi, '\n')
+    .replace(/<p[^>]*>(.*?)<\/p>/gi, '$1\n\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>')
+    .replace(/&nbsp;/g,' ')
+    .replace(/\n{3,}/g,'\n\n')
+    .trim();
+}
+
+// ── Drop zones ─────────────────────────────────────────────────────────────
+let files = { foto: null, adi: null, diploma: null, galeria: [] };
+
+function setupDrop(zoneId, inputId, key, nameId, previewId) {
+  const zone  = document.getElementById(zoneId);
+  const input = document.getElementById(inputId);
+  if (!zone || !input) return;
+
+  input.addEventListener('change', () => handleFiles(key, input.files, nameId, previewId));
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    handleFiles(key, e.dataTransfer.files, nameId, previewId);
+  });
+}
+
+function handleFiles(key, fileList, nameId, previewId) {
+  if (key === 'galeria') {
+    files.galeria = Array.from(fileList);
+    const grid = document.getElementById('galeria-preview');
+    grid.innerHTML = '';
+    files.galeria.forEach(f => {
+      const img = document.createElement('img');
+      img.className = 'photo-thumb';
+      img.src = URL.createObjectURL(f);
+      grid.appendChild(img);
+    });
+    return;
+  }
+  files[key] = fileList[0] || null;
+  if (nameId) document.getElementById(nameId).textContent = files[key]?.name || '';
+  if (previewId && files[key]) {
+    const pr = document.getElementById(previewId);
+    pr.src = URL.createObjectURL(files[key]);
+    pr.style.display = 'block';
+  }
+}
+
+setupDrop('dz-foto',    'file-foto',    'foto',    'foto-name',    'foto-preview');
+setupDrop('dz-adi',     'file-adi',     'adi',     'adi-name',     null);
+setupDrop('dz-diploma', 'file-diploma', 'diploma', 'diploma-name', null);
+setupDrop('dz-galeria', 'file-galeria', 'galeria', null,           null);
+
+// ── Publish ────────────────────────────────────────────────────────────────
+document.getElementById('btn-publish').addEventListener('click', publish);
+
 async function publish() {
-  const nombre = document.getElementById('act-nombre').value.trim();
-  const fecha  = document.getElementById('act-fecha').value;
-  if (!nombre) { toast('El nombre es obligatorio', true); return; }
+  const titulo = document.getElementById('f-titulo').value.trim();
+  const fecha  = document.getElementById('f-fecha').value;
+  if (!titulo) { toast('El título es obligatorio', true); return; }
   if (!fecha)  { toast('La fecha es obligatoria', true); return; }
 
   const btn = document.getElementById('btn-publish');
-  btn.disabled = true;
-  btn.textContent = 'Publicando...';
-  setProgress(0);
+  btn.disabled = true; btn.textContent = 'Publicando...';
+  setProgress(10);
 
-  // Folder name: sanitized
-  const folder = nombre.toLowerCase()
-    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
-    .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n')
-    .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const folderBase = slug(titulo + '-' + fecha);
+  const folderPath = {log:'actividades', post:'posts', evento:'eventos', galeria:'galerias'}[currentType];
+  const folder     = `${folderPath}/${folderBase}`;
 
   const info = {
-    nombre,
+    nombre: titulo,
+    titulo,
     fecha,
-    tipo: document.getElementById('act-tipo').value,
-    indicativo: document.getElementById('act-indicativo').value.trim().toUpperCase(),
-    descripcion: document.getElementById('act-desc').value.trim(),
-    foto: files.foto ? sanitizeFilename(files.foto.name) : null,
+    descripcion: document.getElementById('f-desc').value.trim(),
+    foto: files.foto ? sanitize(files.foto.name) : null,
   };
 
+  if (currentType === 'log') {
+    info.tipo       = document.getElementById('f-tipo').value;
+    info.indicativo = document.getElementById('f-indicativo').value.trim().toUpperCase();
+  }
+  if (currentType === 'evento') {
+    info.fechaFin = document.getElementById('f-fecha-fin').value || null;
+    info.lugar    = document.getElementById('f-lugar').value.trim();
+  }
+  if (['post','evento','galeria'].includes(currentType)) {
+    info.contenido = editorToMarkdown();
+  }
+  if (currentType === 'galeria' && files.galeria.length) {
+    info.fotos = files.galeria.map(f => sanitize(f.name));
+  }
+
   try {
-    // 1. info.json
-    await githubUpload(
-      `actividades/${folder}/info.json`,
-      btoa(JSON.stringify(info, null, 2)),
-      `Nueva actividad: ${nombre}`
-    );
+    await ghUpload(`${folder}/info.json`, btoa(unescape(encodeURIComponent(JSON.stringify(info,null,2)))), `Publica: ${titulo}`);
     setProgress(30);
 
-    // 2. log.adi
-    if (files.adi) {
-      await githubUpload(
-        `actividades/${folder}/log.adi`,
-        await toBase64(files.adi),
-        `Log: ${nombre}`
-      );
+    if (currentType === 'log' && files.adi) {
+      await ghUpload(`${folder}/log.adi`, await toBase64(files.adi), `Log: ${titulo}`);
     }
-    setProgress(60);
+    setProgress(50);
 
-    // 3. foto
     if (files.foto) {
-      await githubUpload(
-        `actividades/${folder}/${sanitizeFilename(files.foto.name)}`,
-        await toBase64(files.foto),
-        `Foto: ${nombre}`
-      );
+      await ghUpload(`${folder}/${sanitize(files.foto.name)}`, await toBase64(files.foto), `Foto: ${titulo}`);
     }
-    setProgress(80);
+    setProgress(65);
 
-    // 4. diploma
-    if (files.diploma) {
-      await githubUpload(
-        `actividades/${folder}/diploma.png`,
-        await toBase64(files.diploma),
-        `Diploma: ${nombre}`
-      );
+    if (currentType === 'log' && files.diploma) {
+      await ghUpload(`${folder}/diploma.png`, await toBase64(files.diploma), `Diploma: ${titulo}`);
+    }
+
+    if (currentType === 'galeria' && files.galeria.length) {
+      for (let i = 0; i < files.galeria.length; i++) {
+        await ghUpload(`${folder}/${sanitize(files.galeria[i].name)}`, await toBase64(files.galeria[i]), `Foto galería`);
+        setProgress(65 + Math.round((i+1)/files.galeria.length * 30));
+      }
     }
     setProgress(100);
-
-    toast('✓ Actividad publicada correctamente');
+    toast('✓ Publicado correctamente');
     resetForm();
-    setTimeout(loadActivities, 1500);
   } catch(e) {
-    toast('Error al publicar: ' + (e.message || e), true);
+    toast('Error: ' + (e.message || e), true);
   } finally {
-    btn.disabled = false;
-    btn.textContent = '📡 PUBLICAR ACTIVIDAD';
+    btn.disabled = false; btn.textContent = '📡 PUBLICAR';
   }
 }
 
-// ── GitHub API ────────────────────────────────────────────────────────────────
-async function githubUpload(path, base64content, message) {
-  // Check if file exists (to get SHA for update)
+// ── Content list ───────────────────────────────────────────────────────────
+async function loadContentList() {
+  const list = document.getElementById('content-list');
+  list.innerHTML = '<div class="empty-list">Cargando...</div>';
+
+  const folders = ['actividades','posts','eventos','galerias'];
+  const items = (await Promise.all(folders.map(loadFolderItems))).flat().filter(Boolean);
+  items.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+
+  if (!items.length) { list.innerHTML = '<div class="empty-list">No hay publicaciones todavía.</div>'; return; }
+
+  list.innerHTML = '';
+  items.forEach(item => {
+    const div = document.createElement('div');
+    div.className = 'content-item';
+    const typeLabel = {actividad:'LOG',post:'NOTICIA',evento:'EVENTO',galeria:'GALERÍA'}[item._type]||'';
+    const badgeClass = {actividad:'badge-log',post:'badge-post',evento:'badge-evento',galeria:'badge-galeria'}[item._type]||'badge-post';
+    div.innerHTML = `
+      <div>
+        <div class="ci-name">
+          <span class="ci-badge ${badgeClass}">${typeLabel}</span>
+          ${item.nombre||item.titulo||item._folder}
+        </div>
+        <div class="ci-meta">${item.fecha||''} · ${item._folder}</div>
+      </div>
+      <div class="ci-actions">
+        <a class="btn-sm" href="${pageFor(item)}" target="_blank">VER →</a>
+      </div>`;
+    list.appendChild(div);
+  });
+}
+
+async function loadFolderItems(folder) {
+  try {
+    const r = await fetch(`${API}/${folder}`, {
+      headers:{Authorization:`token ${ghToken}`,Accept:'application/vnd.github.v3+json'}
+    });
+    if (!r.ok) return [];
+    const dirs = (await r.json()).filter(i => i.type === 'dir');
+    return Promise.all(dirs.map(async d => {
+      try {
+        const r2 = await fetch(`${RAW}/${folder}/${d.name}/info.json`);
+        if (!r2.ok) return null;
+        const info = await r2.json();
+        info._folder = d.name;
+        info._type   = folder.replace(/s$/,'');
+        info._path   = folder;
+        return info;
+      } catch { return null; }
+    }));
+  } catch { return []; }
+}
+
+function pageFor(item) {
+  const pages = {actividad:'actividad.html',post:'post.html',evento:'evento.html',galeria:'galeria.html'};
+  return `${pages[item._type]}?f=${encodeURIComponent(item._path)}&a=${encodeURIComponent(item._folder)}`;
+}
+
+// ── GitHub upload ──────────────────────────────────────────────────────────
+async function ghUpload(path, content, message) {
   let sha;
   try {
-    const check = await fetch(`${API}/${path}`, {
-      headers: { Authorization: `token ${ghToken}`, Accept: 'application/vnd.github.v3+json' }
+    const c = await fetch(`${API}/${path}`, {
+      headers:{Authorization:`token ${ghToken}`,Accept:'application/vnd.github.v3+json'}
     });
-    if (check.ok) { const d = await check.json(); sha = d.sha; }
+    if (c.ok) { sha = (await c.json()).sha; }
   } catch {}
 
-  const body = { message, content: base64content, branch: GITHUB_BRANCH };
+  const body = {message, content, branch: GITHUB_BRANCH};
   if (sha) body.sha = sha;
 
   const r = await fetch(`${API}/${path}`, {
-    method: 'PUT',
-    headers: {
-      Authorization: `token ${ghToken}`,
-      Accept: 'application/vnd.github.v3+json',
-      'Content-Type': 'application/json',
+    method:'PUT',
+    headers:{
+      Authorization:`token ${ghToken}`,
+      Accept:'application/vnd.github.v3+json',
+      'Content-Type':'application/json',
     },
     body: JSON.stringify(body),
   });
-  if (!r.ok) {
-    const err = await r.json();
-    throw new Error(err.message || r.status);
-  }
+  if (!r.ok) { const e = await r.json(); throw new Error(e.message || r.status); }
   return r.json();
 }
 
-// ── Utils ─────────────────────────────────────────────────────────────────────
+// ── Utils ──────────────────────────────────────────────────────────────────
 function toBase64(file) {
-  return new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onload = () => res(reader.result.split(',')[1]);
-    reader.onerror = rej;
-    reader.readAsDataURL(file);
+  return new Promise((res,rej) => {
+    const r = new FileReader();
+    r.onload = () => res(r.result.split(',')[1]);
+    r.onerror = rej;
+    r.readAsDataURL(file);
   });
 }
-
-function sanitizeFilename(name) {
-  return name.replace(/[^a-zA-Z0-9._-]/g, '_');
+function sanitize(n) { return n.replace(/[^a-zA-Z0-9._-]/g,'_'); }
+function slug(s) {
+  return s.toLowerCase()
+    .replace(/[áàä]/g,'a').replace(/[éèë]/g,'e').replace(/[íìï]/g,'i')
+    .replace(/[óòö]/g,'o').replace(/[úùü]/g,'u').replace(/ñ/g,'n')
+    .replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60);
 }
-
-function setProgress(pct) {
-  const wrap = document.getElementById('progress-wrap');
-  const bar  = document.getElementById('progress-bar');
-  wrap.style.display = 'block';
-  bar.style.width = pct + '%';
-  if (pct >= 100) setTimeout(() => { wrap.style.display = 'none'; bar.style.width = '0%'; }, 1000);
+function setProgress(p) {
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('progress-bar').style.width = p + '%';
+  if (p >= 100) setTimeout(() => { document.getElementById('progress-wrap').style.display='none'; document.getElementById('progress-bar').style.width='0%'; }, 1000);
 }
-
 function resetForm() {
-  document.getElementById('act-nombre').value = '';
-  document.getElementById('act-fecha').value = '';
-  document.getElementById('act-indicativo').value = '';
-  document.getElementById('act-desc').value = '';
-  document.getElementById('adi-filename').textContent = '';
-  document.getElementById('foto-filename').textContent = '';
-  document.getElementById('diploma-filename').textContent = '';
+  document.getElementById('f-titulo').value = '';
+  document.getElementById('f-fecha').value = '';
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-indicativo').value = '';
+  document.getElementById('foto-name').textContent = '';
+  document.getElementById('adi-name').textContent = '';
+  document.getElementById('diploma-name').textContent = '';
   document.getElementById('foto-preview').style.display = 'none';
-  files = { adi: null, foto: null, diploma: null };
+  document.getElementById('galeria-preview').innerHTML = '';
+  document.getElementById('editor').innerHTML = '<p>Escribe aquí el contenido...</p>';
+  files = {foto:null,adi:null,diploma:null,galeria:[]};
 }
-
-let toastTimer;
-function toast(msg, isError = false) {
+let toastT;
+function toast(msg, err=false) {
   const el = document.getElementById('toast');
   el.textContent = msg;
-  el.className = 'show' + (isError ? ' error' : '');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.className = '', 3500);
+  el.className = 'show' + (err ? ' error' : '');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.className = '', 3500);
 }
 
-init();
+initAuth();
 </script>
 </body>
 </html>
