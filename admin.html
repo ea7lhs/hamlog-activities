@@ -608,16 +608,21 @@ async function publish() {
   btn.disabled = true; btn.textContent = 'Publicando...';
   setProgress(10);
 
-  const folderBase = slug(titulo + '-' + fecha);
-  const folderPath = {log:'actividades', post:'posts', evento:'eventos', galeria:'galerias'}[currentType];
-  const folder     = `${folderPath}/${folderBase}`;
+  let folder;
+  if (editingFolder) {
+    folder = editingFolder;
+  } else {
+    const folderBase = slug(titulo + '-' + fecha);
+    const folderPath = {log:'actividades', post:'posts', evento:'eventos', galeria:'galerias'}[currentType];
+    folder = `${folderPath}/${folderBase}`;
+  }
 
   const info = {
     nombre: titulo,
     titulo,
     fecha,
     descripcion: document.getElementById('f-desc').value.trim(),
-    foto: files.foto ? sanitize(files.foto.name) : null,
+    foto: files.foto ? sanitize(files.foto.name) : (editingFolder ? (document.getElementById('foto-name').textContent || null) : null),
   };
 
   if (currentType === 'log') {
@@ -777,6 +782,57 @@ function setProgress(p) {
   document.getElementById('progress-bar').style.width = p + '%';
   if (p >= 100) setTimeout(() => { document.getElementById('progress-wrap').style.display='none'; document.getElementById('progress-bar').style.width='0%'; }, 1000);
 }
+
+// ── Edit existing item ─────────────────────────────────────────────────────
+let editingFolder = null; // null = nueva publicación, 'path/folder' = editando
+
+function editItem(item) {
+  editingFolder = item._path + '/' + item._folder;
+  // Switch to nueva tab
+  document.querySelectorAll('.tab-btn[data-tab]').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector('.tab-btn[data-tab="nueva"]').classList.add('active');
+  document.getElementById('tab-nueva').classList.add('active');
+
+  // Set type
+  const typeMap = {actividad:'log', post:'post', evento:'evento', galeria:'galeria'};
+  const t = typeMap[item._type] || 'log';
+  setType(t);
+
+  // Fill fields
+  document.getElementById('f-titulo').value = item.nombre || item.titulo || '';
+  document.getElementById('f-fecha').value  = item.fecha || '';
+  document.getElementById('f-desc').value   = item.descripcion || '';
+  if (item.indicativo) document.getElementById('f-indicativo').value = item.indicativo;
+  if (item.tipo) document.getElementById('f-tipo').value = item.tipo;
+  if (item.fechaFin) document.getElementById('f-fecha-fin').value = item.fechaFin;
+  if (item.lugar) document.getElementById('f-lugar').value = item.lugar;
+  if (item.contenido) document.getElementById('editor').innerHTML = markdownToHtml(item.contenido);
+
+  // Update button
+  document.getElementById('btn-publish').textContent = '💾 GUARDAR CAMBIOS';
+  document.getElementById('btn-publish').style.background = 'var(--accent2)';
+
+  // Scroll to form
+  document.getElementById('tab-nueva').scrollIntoView({behavior:'smooth'});
+  toast('Editando: ' + (item.nombre || item.titulo));
+}
+
+function markdownToHtml(md) {
+  return md
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/
+
+/g, '</p><p>')
+    .replace(/^(?!<)(.+)$/gm, '<p>$1</p>');
+}
+
 function resetForm() {
   document.getElementById('f-titulo').value = '';
   document.getElementById('f-fecha').value = '';
@@ -789,6 +845,9 @@ function resetForm() {
   document.getElementById('galeria-preview').innerHTML = '';
   document.getElementById('editor').innerHTML = '<p>Escribe aquí el contenido...</p>';
   files = {foto:null,adi:null,diploma:null,galeria:[]};
+  editingFolder = null;
+  document.getElementById('btn-publish').textContent = '📡 PUBLICAR';
+  document.getElementById('btn-publish').style.background = '';
 }
 let toastT;
 function toast(msg, err=false) {
