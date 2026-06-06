@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HamLog — Galería</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0a0e0f;--surface:#111618;--surface2:#1a2022;--border:#2a3538;--accent:#00e5a0;--gallery:#f472b6;--text:#dde8ea;--text-dim:#6b8a90;--mono:'Share Tech Mono',monospace;--sans:'Barlow',sans-serif;--cond:'Barlow Condensed',sans-serif;}
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(244,114,182,.03) 40px),repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(244,114,182,.03) 40px);}
+  header{position:relative;z-index:10;padding:1.2rem 2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:1.2rem}
+  .back-link{font-family:var(--mono);font-size:.72rem;color:var(--text-dim);text-decoration:none;letter-spacing:.1em;transition:color .2s}
+  .back-link:hover{color:var(--accent)}
+  .hero-title-wrap{position:relative;z-index:1;padding:2.5rem 2rem 1.5rem;border-bottom:1px solid var(--border)}
+  .hero-badge{font-family:var(--mono);font-size:.6rem;color:var(--gallery);letter-spacing:.2em;margin-bottom:.4rem}
+  .hero-title{font-family:var(--cond);font-size:clamp(1.8rem,4vw,3rem);font-weight:900}
+  .hero-date{font-family:var(--mono);font-size:.7rem;color:var(--text-dim);margin-top:.4rem}
+  main{position:relative;z-index:1;max-width:1200px;margin:0 auto;padding:2.5rem 2rem}
+  .photo-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:4px}
+  .photo-item{overflow:hidden;cursor:pointer;aspect-ratio:4/3;background:var(--surface2)}
+  .photo-item img{width:100%;height:100%;object-fit:cover;transition:transform .3s,filter .3s;filter:brightness(.85)}
+  .photo-item:hover img{transform:scale(1.04);filter:brightness(1)}
+
+  /* Lightbox */
+  .lightbox{display:none;position:fixed;inset:0;background:rgba(10,14,15,.96);z-index:100;align-items:center;justify-content:center}
+  .lightbox.open{display:flex}
+  .lb-img{max-width:90vw;max-height:88vh;object-fit:contain;display:block}
+  .lb-close{position:absolute;top:1.2rem;right:1.5rem;font-family:var(--mono);font-size:1rem;color:var(--text-dim);background:none;border:none;cursor:pointer;letter-spacing:.1em}
+  .lb-close:hover{color:var(--text)}
+  .lb-nav{position:absolute;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:1.5rem;color:var(--text-dim);background:none;border:none;cursor:pointer;padding:.5rem 1rem}
+  .lb-nav:hover{color:var(--text)}
+  .lb-prev{left:.5rem}.lb-next{right:.5rem}
+  .lb-counter{position:absolute;bottom:1.5rem;left:50%;transform:translateX(-50%);font-family:var(--mono);font-size:.7rem;color:var(--text-dim)}
+  footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:1.5rem 2rem;text-align:center;font-family:var(--mono);font-size:.63rem;color:var(--text-dim)}
+  footer a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<header><a href="index.html" class="back-link">← VOLVER</a></header>
+<div class="hero-title-wrap">
+  <div class="hero-badge">GALERÍA</div>
+  <div class="hero-title" id="hero-title">Cargando...</div>
+  <div class="hero-date" id="hero-date"></div>
+</div>
+<main>
+  <div class="photo-grid" id="photo-grid"></div>
+</main>
+
+<div class="lightbox" id="lightbox">
+  <button class="lb-close" onclick="closeLB()">✕ CERRAR</button>
+  <button class="lb-nav lb-prev" onclick="navLB(-1)">‹</button>
+  <img class="lb-img" id="lb-img" src="" alt="">
+  <button class="lb-nav lb-next" onclick="navLB(1)">›</button>
+  <div class="lb-counter" id="lb-counter"></div>
+</div>
+
+<footer>HamLog — <a href="index.html">Volver al inicio</a></footer>
+<script>
+const GITHUB_USER='ea7lhs',GITHUB_REPO='hamlog-activities',GITHUB_BRANCH='main';
+const RAW=`https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}`;
+const p=new URLSearchParams(location.search);
+const folder=p.get('f'),name=p.get('a');
+let photos=[],lbIdx=0;
+
+async function load(){
+  const r=await fetch(`${RAW}/${folder}/${name}/info.json`);
+  if(!r.ok)return;
+  const info=await r.json();
+  document.title=(info.titulo||info.nombre)+' — HamLog';
+  document.getElementById('hero-title').textContent=info.titulo||info.nombre||'';
+  if(info.fecha) document.getElementById('hero-date').textContent=new Date(info.fecha).toLocaleDateString('es-ES',{day:'numeric',month:'long',year:'numeric'});
+  photos=(info.fotos||[]).map(f=>`${RAW}/${folder}/${name}/${f}`);
+  const grid=document.getElementById('photo-grid');
+  photos.forEach((url,i)=>{
+    const div=document.createElement('div');
+    div.className='photo-item';
+    div.onclick=()=>openLB(i);
+    div.innerHTML=`<img src="${url}" alt="Foto ${i+1}" loading="lazy">`;
+    grid.appendChild(div);
+  });
+}
+function openLB(i){lbIdx=i;document.getElementById('lightbox').classList.add('open');updateLB()}
+function closeLB(){document.getElementById('lightbox').classList.remove('open')}
+function navLB(d){lbIdx=(lbIdx+d+photos.length)%photos.length;updateLB()}
+function updateLB(){document.getElementById('lb-img').src=photos[lbIdx];document.getElementById('lb-counter').textContent=`${lbIdx+1} / ${photos.length}`}
+document.getElementById('lightbox').addEventListener('click',e=>{if(e.target===e.currentTarget)closeLB()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeLB();if(e.key==='ArrowLeft')navLB(-1);if(e.key==='ArrowRight')navLB(1)});
+load();
+</script>
+</body>
+</html>
