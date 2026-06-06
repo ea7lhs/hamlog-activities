@@ -40,6 +40,10 @@ header{position:relative;z-index:10;padding:1rem 1.5rem;border-bottom:1px solid 
 .field-header{display:flex;align-items:center;gap:.5rem;margin-bottom:.5rem}
 .field-toggle{width:16px;height:16px;cursor:pointer;accent-color:var(--accent)}
 .field-name{font-family:var(--mono);font-size:.72rem;color:var(--text);flex:1}
+.align-btns{display:flex;gap:2px;margin-left:auto}
+.align-btn{background:none;border:1px solid var(--border);color:var(--text-dim);
+  font-size:.65rem;padding:.15rem .35rem;cursor:pointer;transition:all .15s;line-height:1}
+.align-btn:hover{border-color:var(--accent);color:var(--accent)}
 .field-controls{display:grid;grid-template-columns:1fr 1fr;gap:.4rem}
 .field-controls label{font-family:var(--mono);font-size:.58rem;color:var(--text-dim);display:block;margin-bottom:.2rem}
 .field-controls input[type=number],.field-controls select,.field-controls input[type=color]{
@@ -294,6 +298,10 @@ function buildSidebar() {
       <div class="field-header">
         <input type="checkbox" class="field-toggle" id="toggle-${f.id}" ${cfg.visible?'checked':''}>
         <label class="field-name" for="toggle-${f.id}">${f.label}</label>
+        <div class="align-btns">
+          <button class="align-btn" id="ch-${f.id}" title="Centrar horizontal">↔</button>
+          <button class="align-btn" id="cv-${f.id}" title="Centrar vertical">↕</button>
+        </div>
       </div>
       <div class="field-controls" style="${cfg.visible?'':'opacity:.4;pointer-events:none'}">
         <div>
@@ -342,6 +350,26 @@ function buildSidebar() {
     div.querySelector(`#font-${f.id}`).addEventListener('change', e => {
       fieldConfig[f.id].font = e.target.value;
       updateLabel(f.id);
+    });
+
+    // Align horizontal center
+    div.querySelector(`#ch-${f.id}`).addEventListener('click', () => {
+      const lbl = document.getElementById(`lbl-${f.id}`);
+      if (!lbl) return;
+      const lblW = lbl.offsetWidth;
+      const newLeft = Math.max(0, (wrapW - lblW) / 2);
+      lbl.style.left = newLeft + 'px';
+      fieldConfig[f.id].x = Math.round(newLeft / wrapW * 100 * 10) / 10;
+    });
+
+    // Align vertical center
+    div.querySelector(`#cv-${f.id}`).addEventListener('click', () => {
+      const lbl = document.getElementById(`lbl-${f.id}`);
+      if (!lbl) return;
+      const lblH = lbl.offsetHeight;
+      const newTop = Math.max(0, (wrapH - lblH) / 2);
+      lbl.style.top = newTop + 'px';
+      fieldConfig[f.id].y = Math.round(newTop / wrapH * 100 * 10) / 10;
     });
 
 
