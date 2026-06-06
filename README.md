@@ -1,24 +1,13 @@
-# 📻 HamLog — Sistema de logs para radioaficionados
+# 📻 HamLog — Sistema de publicaciones para radioaficionados
 
-Web estática para publicar logs y actividades de radioafición. Sin backend, sin base de datos. Se despliega gratis en GitHub Pages.
+Web estática para publicar logs, noticias, eventos y galerías. Sin backend propio. Gratis en GitHub Pages.
 
-## Estructura del repo
+## Tipos de contenido
 
-```
-hamlog/
-├── index.html              ← Web pública (listado de actividades)
-├── actividad.html          ← Visor de log + generador QSL
-├── admin.html              ← Panel de administración
-├── hamlog.config.json      ← Configuración del sitio
-├── actividades/
-│   └── nombre-actividad/
-│       ├── info.json       ← Datos de la actividad
-│       ├── log.adi         ← Log en formato ADIF
-│       ├── foto.jpg        ← Foto de portada
-│       └── diploma.png     ← Imagen base para QSL (opcional)
-└── .github/workflows/
-    └── deploy.yml          ← Auto-deploy a GitHub Pages
-```
+- 📡 **Actividad con log** — ADIF + estadísticas + generador de tarjetas QSL
+- 📝 **Noticia / Blog** — Artículo con editor visual (Markdown transparente)
+- 📅 **Evento** — Convocatoria con cuenta atrás en tiempo real
+- 🖼️ **Galería** — Álbum de fotos con lightbox
 
 ---
 
@@ -28,100 +17,105 @@ hamlog/
 
 Haz fork de este repo a tu cuenta de GitHub.
 
-### 2. Edita `index.html` y `actividad.html`
+### 2. Activa GitHub Pages
 
-En **ambos archivos**, busca estas líneas al final del `<script>` y rellena:
+1. Settings → Pages
+2. Source: **Deploy from a branch** → `main` / `/ (root)`
+3. Tu web estará en `https://TU_USUARIO.github.io/TU_REPO`
 
-```js
-const GITHUB_USER   = 'TU_USUARIO';   // tu usuario de GitHub
-const GITHUB_REPO   = 'TU_REPO';      // nombre del repo
-const GITHUB_BRANCH = 'main';
-```
-
-### 3. Edita `admin.html`
-
-Busca las mismas líneas y además:
-
-```js
-const OAUTH_CLIENT_ID = 'TU_CLIENT_ID';  // ver paso 4
-```
-
-### 4. Crea la OAuth App de GitHub
-
-1. Ve a https://github.com/settings/developers
-2. → "OAuth Apps" → "New OAuth App"
-3. Rellena:
-   - **Application name:** HamLog Admin
-   - **Homepage URL:** `https://TU_USUARIO.github.io/TU_REPO`
-   - **Authorization callback URL:** `https://TU_USUARIO.github.io/TU_REPO/admin.html`
-4. Clic en "Register application"
-5. Copia el **Client ID** y pégalo en `admin.html` (paso 3)
-
-> **Nota sobre el proxy OAuth:** GitHub no permite intercambiar el código OAuth directamente desde el navegador. El `admin.html` usa un proxy público para esto. Para producción seria, despliega tu propio proxy en Cloudflare Workers o Vercel (ver sección avanzada abajo).
->
-> **Alternativa más simple:** Si prefieres no configurar OAuth, elimina `OAUTH_CLIENT_ID` y el panel pedirá un token personal de GitHub (Settings → Developer settings → Personal access tokens → Fine-grained). El admin lo pega una vez y se guarda en el navegador.
-
-### 5. Configura `hamlog.config.json`
+### 3. Configura `hamlog.config.json`
 
 ```json
 {
   "callsign": "EA7LHS",
-  "titulo": "Mis actividades de radioafición"
+  "titulo": "HamLog",
+  "subtitulo": "Actividades y noticias"
 }
 ```
 
-### 6. Activa GitHub Pages
+### 4. Actualiza las constantes en los archivos HTML
 
-1. Ve a Settings → Pages en tu repo
-2. Source: **GitHub Actions**
-3. La web estará en `https://TU_USUARIO.github.io/TU_REPO`
+En `index.html`, `actividad.html`, `post.html`, `evento.html`, `galeria.html` y `admin.html` busca y rellena:
+
+```js
+const GITHUB_USER = 'TU_USUARIO';
+const GITHUB_REPO = 'TU_REPO';
+```
+
+### 5. Configura Clerk (login del panel admin)
+
+Clerk gestiona el login con GitHub para el panel de administración. Es gratuito.
+
+1. Crea cuenta en https://clerk.com
+2. Crea una nueva aplicación
+3. En "Social connections" activa **GitHub**
+4. En GitHub: ve a https://github.com/settings/developers → OAuth Apps → New OAuth App
+   - Homepage URL: `https://TU_USUARIO.github.io/TU_REPO`
+   - Callback URL: la que te da Clerk en su panel
+5. Copia las credenciales de GitHub a Clerk
+6. En Clerk → API Keys → copia la **Publishable Key** (`pk_live_...`)
+7. Pégala en `admin.html`:
+
+```js
+const CLERK_KEY = 'pk_live_XXXXXXXXXX';
+```
+
+> **Sin Clerk configurado**, el panel funciona igualmente en modo desarrollo: pide un token de GitHub personal al entrar. Útil para probar.
+
+---
+
+## 📋 Estructura de carpetas
+
+```
+/actividades/nombre-actividad/
+    info.json       ← datos de la actividad
+    log.adi         ← log ADIF
+    foto.jpg        ← foto de portada
+    diploma.png     ← imagen QSL (opcional)
+
+/posts/nombre-post/
+    info.json
+
+/eventos/nombre-evento/
+    info.json
+
+/galerias/nombre-galeria/
+    info.json
+    foto1.jpg
+    foto2.jpg
+    ...
+```
+
+El panel de administración crea esta estructura automáticamente.
 
 ---
 
 ## 📋 Formato de `info.json`
 
+### Actividad con log
 ```json
 {
-  "nombre": "POTA EA5-001 · Mayo 2025",
+  "nombre": "POTA EA5-001",
   "tipo": "POTA",
   "fecha": "2025-05-15",
   "indicativo": "EA7LHS",
-  "descripcion": "Descripción opcional de la actividad.",
+  "descripcion": "Descripción breve",
   "foto": "foto.jpg"
 }
 ```
 
-Campos `tipo` válidos: `POTA`, `SOTA`, `CONCURSO`, `EXPEDICIÓN`, `EVENTO`, `ACTIVIDAD`
-
----
-
-## 🔧 Proxy OAuth avanzado (opcional)
-
-Para no depender del proxy público, despliega este worker en Cloudflare (gratis):
-
-```js
-// worker.js
-export default {
-  async fetch(req) {
-    const url = new URL(req.url);
-    const code = url.searchParams.get('code');
-    const r = await fetch('https://github.com/login/oauth/access_token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify({
-        client_id: 'TU_CLIENT_ID',
-        client_secret: 'TU_CLIENT_SECRET',
-        code
-      })
-    });
-    const data = await r.json();
-    return Response.json({ token: data.access_token });
-  }
-};
+### Noticia / Evento / Galería
+```json
+{
+  "titulo": "Título",
+  "fecha": "2025-06-01",
+  "descripcion": "Resumen corto",
+  "contenido": "Texto en **Markdown**",
+  "foto": "portada.jpg",
+  "fotos": ["foto1.jpg","foto2.jpg"]
+}
 ```
 
-Luego en `admin.html` cambia la URL del proxy por la de tu worker.
-
 ---
 
-## 73 de EA7LHS 📻
+## 73 📻
