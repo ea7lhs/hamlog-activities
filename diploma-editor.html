@@ -58,9 +58,9 @@ header{position:relative;z-index:10;padding:1rem 1.5rem;border-bottom:1px solid 
 .btn-preview:hover{background:var(--accent2);color:var(--bg)}
 
 /* Canvas area */
-.canvas-area{position:relative;z-index:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;padding:2rem;background:var(--bg)}
+.canvas-area{position:relative;z-index:1;overflow:auto;display:flex;align-items:center;justify-content:center;padding:1rem;background:var(--bg)}
 #diploma-wrap{position:relative;display:inline-block;cursor:crosshair}
-#diploma-bg{display:block;max-width:100%;user-select:none;pointer-events:none}
+#diploma-bg{display:block;max-width:100%;max-height:100%;user-select:none;pointer-events:none;object-fit:contain}
 .diploma-placeholder{width:800px;max-width:90vw;height:500px;background:var(--surface2);border:2px dashed var(--border);
   display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;color:var(--text-dim)}
 .diploma-placeholder .icon{font-size:3rem}
@@ -245,26 +245,32 @@ function renderDiplomaImg() {
   wrap.innerHTML = `<img id="diploma-bg" src="${RAW}/${actPath}/${actFolder}/diploma.png" alt="diploma" crossorigin="anonymous">`;
   const img = document.getElementById('diploma-bg');
   img.onload = () => {
-    // Use natural dimensions as base reference
-    wrapW = img.naturalWidth;
-    wrapH = img.naturalHeight;
-    // Scale down for display if too large
-    const maxW = document.querySelector('.canvas-area').offsetWidth - 64;
-    const scale = wrapW > maxW ? maxW / wrapW : 1;
-    img.style.width  = Math.round(wrapW * scale) + 'px';
-    img.style.height = Math.round(wrapH * scale) + 'px';
-    // Use displayed size for drag positioning
+    // Fit diploma within visible canvas area (both width and height)
+    const area  = document.querySelector('.canvas-area');
+    const maxW  = area.offsetWidth  - 32;
+    const maxH  = area.offsetHeight - 32;
+    const natW  = img.naturalWidth;
+    const natH  = img.naturalHeight;
+    const scale = Math.min(maxW / natW, maxH / natH, 1);
+    img.style.width  = Math.round(natW * scale) + 'px';
+    img.style.height = Math.round(natH * scale) + 'px';
     setTimeout(() => {
-      wrapW = img.offsetWidth || Math.round(wrapW * scale);
-      wrapH = img.offsetHeight || Math.round(wrapH * scale);
-      buildSidebar();   // rebuild with correct fieldConfig values
-      renderLabels();   // reposition with correct wrapW/wrapH
+      wrapW = img.offsetWidth  || Math.round(natW * scale);
+      wrapH = img.offsetHeight || Math.round(natH * scale);
+      buildSidebar();
+      renderLabels();
     }, 50);
   };
 }
 
 function renderPlaceholder() {
   const wrap = document.getElementById('diploma-wrap');
+  const area2 = document.querySelector('.canvas-area');
+  const maxW2 = area2.offsetWidth  - 32;
+  const maxH2 = area2.offsetHeight - 32;
+  const sc2   = Math.min(maxW2 / wrapW, maxH2 / wrapH, 1);
+  wrapW = Math.round(wrapW * sc2);
+  wrapH = Math.round(wrapH * sc2);
   wrap.style.width  = wrapW + 'px';
   wrap.style.height = wrapH + 'px';
   wrap.innerHTML = `
