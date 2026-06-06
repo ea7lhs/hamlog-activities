@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HamLog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow:wght@300;400;600;700&family=Barlow+Condensed:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e0f;
+    --surface: #111618;
+    --surface2: #1a2022;
+    --border: #2a3538;
+    --accent: #00e5a0;
+    --accent2: #00b8d4;
+    --warn: #ff6b35;
+    --text: #dde8ea;
+    --text-dim: #6b8a90;
+    --mono: 'Share Tech Mono', monospace;
+    --sans: 'Barlow', sans-serif;
+    --condensed: 'Barlow Condensed', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid noise texture overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(0,229,160,0.03) 40px),
+      repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(0,229,160,0.03) 40px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  header {
+    position: relative;
+    z-index: 10;
+    padding: 2.5rem 2rem 2rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .logo-area {}
+
+  .logo-tag {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+
+  .logo-title {
+    font-family: var(--condensed);
+    font-size: clamp(2.2rem, 5vw, 3.5rem);
+    font-weight: 900;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    color: var(--text);
+  }
+
+  .logo-title span {
+    color: var(--accent);
+  }
+
+  .logo-sub {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    margin-top: 0.5rem;
+    letter-spacing: 0.1em;
+  }
+
+  #site-callsign {
+    font-family: var(--condensed);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: 700;
+    color: var(--accent2);
+    letter-spacing: 0.05em;
+    text-align: right;
+  }
+
+  .admin-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    text-decoration: none;
+    border: 1px solid var(--border);
+    padding: 0.4rem 0.8rem;
+    letter-spacing: 0.1em;
+    transition: all 0.2s;
+    margin-top: 0.5rem;
+  }
+  .admin-link:hover { color: var(--accent); border-color: var(--accent); }
+
+  main {
+    position: relative;
+    z-index: 1;
+    max-width: 1300px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* Loading state */
+  #loading {
+    text-align: center;
+    padding: 5rem 2rem;
+  }
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 1.5rem;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #loading p { font-family: var(--mono); font-size: 0.8rem; color: var(--text-dim); }
+
+  /* Activities grid */
+  #activities-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .activity-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    cursor: pointer;
+    transition: transform 0.25s, border-color 0.25s, box-shadow 0.25s;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    animation: fadeUp 0.4s ease both;
+  }
+  .activity-card:hover {
+    transform: translateY(-4px);
+    border-color: var(--accent);
+    box-shadow: 0 12px 40px rgba(0,229,160,0.1);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-photo {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+    filter: grayscale(20%) brightness(0.85);
+    transition: filter 0.3s;
+    background: var(--surface2);
+  }
+  .activity-card:hover .card-photo { filter: grayscale(0%) brightness(1); }
+
+  .card-photo-placeholder {
+    width: 100%;
+    height: 180px;
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 3rem;
+    color: var(--border);
+  }
+
+  .card-body {
+    padding: 1.2rem 1.4rem 1.4rem;
+  }
+
+  .card-type {
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    color: var(--accent);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .card-name {
+    font-family: var(--condensed);
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin-bottom: 0.6rem;
+    color: var(--text);
+  }
+
+  .card-date {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    color: var(--text-dim);
+  }
+
+  .card-footer {
+    padding: 0.8rem 1.4rem;
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-qsos {
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--text-dim);
+  }
+  .card-qsos strong {
+    color: var(--accent2);
+    font-size: 1rem;
+  }
+
+  .card-arrow {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.1em;
+  }
+
+  /* Empty state */
+  #empty-state {
+    display: none;
+    text-align: center;
+    padding: 5rem 2rem;
+    border: 1px dashed var(--border);
+  }
+  #empty-state h2 {
+    font-family: var(--condensed);
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--text-dim);
+    margin-bottom: 0.75rem;
+  }
+  #empty-state p {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    line-height: 1.8;
+  }
+  #empty-state a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  footer {
+    position: relative;
+    z-index: 1;
+    border-top: 1px solid var(--border);
+    padding: 1.5rem 2rem;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--text-dim);
+    letter-spacing: 0.1em;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-area">
+    <div class="logo-tag">&#9679; Amateur Radio Log</div>
+    <div class="logo-title">Ham<span>Log</span></div>
+    <div class="logo-sub" id="site-subtitle">Actividades y logs públicos</div>
+  </div>
+  <div style="text-align:right">
+    <div id="site-callsign"></div>
+    <a href="admin.html" class="admin-link">&#9881; Panel admin</a>
+  </div>
+</header>
+
+<main>
+  <div class="section-label">Actividades</div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    <p>Cargando actividades...</p>
+  </div>
+
+  <div id="activities-grid" style="display:none"></div>
+
+  <div id="empty-state">
+    <h2>Sin actividades aún</h2>
+    <p>No hay actividades publicadas todavía.<br>
+    Ve al <a href="admin.html">panel de administración</a> para crear la primera.</p>
+  </div>
+</main>
+
+<footer>
+  HamLog — Sistema de logs para radioaficionados &mdash;
+  <a href="https://github.com" target="_blank">Código abierto en GitHub</a>
+</footer>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+// Estos dos valores se configuran UNA VEZ al hacer el fork:
+const GITHUB_USER = '';       // tu usuario de GitHub  ej: 'ea7lhs'
+const GITHUB_REPO = '';       // nombre del repo       ej: 'mi-hamlog'
+const GITHUB_BRANCH = 'main';
+// ──────────────────────────────────────────────────────────────────────────────
+
+const RAW = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}`;
+const API = `https://api.github.com/repos/${GITHUB_USER}/${GITHUB_REPO}/contents`;
+
+async function loadSiteConfig() {
+  try {
+    const r = await fetch(`${RAW}/hamlog.config.json`);
+    if (!r.ok) return;
+    const cfg = await r.json();
+    if (cfg.callsign) document.getElementById('site-callsign').textContent = cfg.callsign;
+    if (cfg.titulo) document.getElementById('site-subtitle').textContent = cfg.titulo;
+    if (cfg.titulo) document.title = cfg.titulo + ' — HamLog';
+  } catch {}
+}
+
+async function loadActivities() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('activities-grid').style.display = 'none';
+
+  try {
+    const r = await fetch(`${API}/actividades`, {
+      headers: { 'Accept': 'application/vnd.github.v3+json' }
+    });
+
+    if (!r.ok) throw new Error('No se pudo acceder al repositorio');
+    const items = await r.json();
+
+    // Solo carpetas
+    const folders = items.filter(i => i.type === 'dir');
+
+    if (folders.length === 0) {
+      showEmpty();
+      return;
+    }
+
+    // Cargar info.json de cada actividad en paralelo
+    const activities = await Promise.all(folders.map(loadActivity));
+    const valid = activities.filter(Boolean);
+    valid.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+    if (valid.length === 0) { showEmpty(); return; }
+
+    renderActivities(valid);
+  } catch (e) {
+    console.error(e);
+    showEmpty();
+  }
+}
+
+async function loadActivity(folder) {
+  try {
+    const r = await fetch(`${RAW}/actividades/${folder.name}/info.json`);
+    if (!r.ok) return null;
+    const info = await r.json();
+    info._folder = folder.name;
+
+    // Contar QSOs del log si existe
+    try {
+      const lr = await fetch(`${RAW}/actividades/${folder.name}/log.adi`);
+      if (lr.ok) {
+        const txt = await lr.text();
+        info._qsos = (txt.match(/<EOR>/gi) || []).length;
+      }
+    } catch {}
+
+    return info;
+  } catch { return null; }
+}
+
+function renderActivities(activities) {
+  document.getElementById('loading').style.display = 'none';
+  const grid = document.getElementById('activities-grid');
+  grid.style.display = 'grid';
+  grid.innerHTML = '';
+
+  activities.forEach((act, i) => {
+    const card = document.createElement('a');
+    card.className = 'activity-card';
+    card.href = `actividad.html?a=${encodeURIComponent(act._folder)}`;
+    card.style.animationDelay = `${i * 0.06}s`;
+
+    const fotoUrl = act.foto
+      ? `${RAW}/actividades/${act._folder}/${act.foto}`
+      : null;
+
+    const photoHtml = fotoUrl
+      ? `<img class="card-photo" src="${fotoUrl}" alt="${act.nombre}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=card-photo-placeholder>📻</div>'">`
+      : `<div class="card-photo-placeholder">📻</div>`;
+
+    const fecha = act.fecha
+      ? new Date(act.fecha).toLocaleDateString('es-ES', { day:'numeric', month:'long', year:'numeric' })
+      : '';
+
+    const tipo = act.tipo || 'ACTIVIDAD';
+
+    card.innerHTML = `
+      ${photoHtml}
+      <div class="card-body">
+        <div class="card-type">${tipo}</div>
+        <div class="card-name">${act.nombre}</div>
+        <div class="card-date">${fecha}</div>
+      </div>
+      <div class="card-footer">
+        <div class="card-qsos">
+          ${act._qsos !== undefined ? `<strong>${act._qsos}</strong> QSOs` : ''}
+        </div>
+        <div class="card-arrow">VER LOG →</div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function showEmpty() {
+  document.getElementById('loading').style.display = 'none';
+  document.getElementById('empty-state').style.display = 'block';
+}
+
+loadSiteConfig();
+loadActivities();
+</script>
+</body>
+</html>
