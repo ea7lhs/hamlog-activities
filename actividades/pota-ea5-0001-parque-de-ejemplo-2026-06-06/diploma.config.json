@@ -1,0 +1,83 @@
+{
+  "call": {
+    "x": 38.8,
+    "y": 19.1,
+    "size": 6,
+    "font": "Barlow",
+    "weight": "900",
+    "color": "#00eb10",
+    "visible": true
+  },
+  "date": {
+    "x": 5,
+    "y": 35,
+    "size": 3.5,
+    "font": "Share Tech Mono",
+    "weight": "400",
+    "color": "#dde8ea",
+    "visible": false
+  },
+  "time": {
+    "x": 25,
+    "y": 35,
+    "size": 3.5,
+    "font": "Share Tech Mono",
+    "weight": "400",
+    "color": "#dde8ea",
+    "visible": false
+  },
+  "band": {
+    "x": 45,
+    "y": 35,
+    "size": 3.5,
+    "font": "Share Tech Mono",
+    "weight": "400",
+    "color": "#00e5a0",
+    "visible": false
+  },
+  "mode": {
+    "x": 60,
+    "y": 35,
+    "size": 3.5,
+    "font": "Share Tech Mono",
+    "weight": "400",
+    "color": "#00e5a0",
+    "visible": false
+  },
+  "rst_s": {
+    "x": 5,
+    "y": 50,
+    "size": 2.8,
+    "font": "Share Tech Mono",
+    "weight": "400",
+    "color": "#6b8a90",
+    "visible": false
+  },
+  "rst_r": {
+    "x": 20,
+    "y": 50,
+    "size": 2.8,
+    "font": "Share Tech Mono",
+    "weight": "400",
+    "color": "#6b8a90",
+    "visible": false
+  },
+  "station": {
+    "x": 45.6,
+    "y": 74.3,
+    "size": 2.9,
+    "font": "Barlow Condensed",
+    "weight": "700",
+    "color": "#00e5a0",
+    "visible": true
+  },
+  "actname": {
+    "x": 24.5,
+    "y": 30.6,
+    "size": 2.8,
+    "font": "Share Tech Mono",
+    "weight": "700",
+    "color": "#00b8d4",
+    "visible": true
+  }
+}
